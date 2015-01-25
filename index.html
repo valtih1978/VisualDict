@@ -6,6 +6,25 @@
   <meta http-equiv="X-UA-Compatible" content="IE=9">
   <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
   <script type="text/javascript" src="realtime-client-utils.js"></script>
+  
+  <script>
+	function aval() {return document.querySelector("#a_complex_id").value.trim()} ;
+	function bval() {return document.querySelector("#b_complex_id").value.trim()} ;
+	
+	
+	// called by controller.js
+	function onFileLoaded(doc) {}
+	function printAll() { 
+		var keys = graph.keys() ; document.querySelector("#textarea1").value = ""
+		for (i in keys) {
+			console.log(keys[i] + " => " + graph.get(keys[i]))
+			document.querySelector("#textarea1").value += keys[i] + " => " + graph.get(keys[i]) + "\n"
+		}
+	}
+
+  </script>
+
+  <script type="text/javascript" src="controller.js"></script>
 </head>
 
 <!-- Start Realtime when the body has loaded. -->
@@ -16,193 +35,28 @@
   <!-- Undo and redo buttons. -->
   <button id="undoButton" disabled>Undo</button>
   <button id="redoButton" disabled>Redo</button>
-  Thanks to Google Drive Realtime API you get <a target="_blank" href="#">collab</a> overkill for free
 <p>
   <button onclick="createNode(validateName(aval()))">New Node</button>
   <button onclick="deleteNode()">Delete Node</button>
   <button onclick="renameNode()">Rename Node</button>
   <button onclick="connectSpecified(aval(), bval())">Connect</button> 
   <button onclick="disconnectNodes()">Disconnect</button>
-  <input id="a_complex_id"/><input id="b_complex_id"/>
+  <input id="a_complex_id" size="4"/><input id="b_complex_id" size="4"/>
 	<button onclick="printAll()">Show all</button>
 	<p>
-	<textarea id="textarea1" disabled rows=7></textarea>
-	
-  <script>
-	var graph ; var model
-	function aval() {return document.querySelector("#a_complex_id").value.trim()} ;
-	function bval() {return document.querySelector("#b_complex_id").value.trim()} ;
-
-	function validate(name) {
-		name = name.trim()
-		if (name.indexOf(',') != -1) throw new Error( "Comma is forbidden in the words")
-		if (name.length == 0) throw new Error("Name must be not empty")
-		if (graph.get(name)) throw new Error("node `" + name + "` already exists")
-		return name
-	}
-	function createNode(name) {
-		graph.set(name, "");
-	}
-	function listConnections(key) {
-		var str = graph.get(key)
-		return (str == "") ? [] : str.split(',')
-	}
-	
-	// dict.keys() is not operational in my browser (Chrome 40)
-	function keys(dict) {
-		var keys = [] ;  for(var key in dict) keys.push( key );
-		return keys
-	}
-	
-	function connectionSet(key) {
-		var list = listConnections(key)
-		var dict = {}
-		for (i in list) {
-			dict[list[i]] = null // dummy value
-		}
-		return dict
-	}
-	function compound(action) {
-		model.beginCompoundOperation();
-		try {
-			return action()
-		} finally {
-			model.endCompoundOperation();
-		}
-	}
-	function renameNode() {
-		var newName = validateName(bval())
-		return compound(function() {
-			var mustConnectTo = deleteNode()
-			console.log("deleted connections with " + mustConnectTo)
-			createNode(newName)
-			for (i in mustConnectTo)
-				connectSpecified(mustConnectTo[i], newName)
-		})
-	}
-	function deleteNode() {
-		return compound(function() {
-			// can we combine multiple update requests into one in google realtime?
-			var connectedTo = listConnections(aval())
-			for (i in connectedTo)
-				disconnectFrom(connectedTo[i], aval())
-				
-			graph.delete(aval());
-			return connectedTo
-		})
-	}
-	function disconnectFrom(fromKey, entry) {
-		//console.log("deleted " + endtry + " from " + fromKey)
-		var connections = connectionSet(fromKey)
-		delete connections [entry]
-		setConnections(fromKey, connections)
-	}
-	function setConnections(key, dict) {
-		console.log("storing " + dict.length + " values into " +key  + ": " + keys(dict).join(','))
-		graph.set(key, /*dict.keys()*/keys(dict).join(','))
-	}
-	
-	function disconnectNodes() {
-		return compound(function() {
-			disconnectFrom(aval(), bval())
-			disconnectFrom(bval(), aval())
-			console.log("disconnecting " + bval() + " from " + aval() + "("+graph.get(aval())+")")
-		})
-	}
-	
-	function connectSpecified(a,b) {
-		function half(a,b) {
-			var aValues = connectionSet(a)
-			aValues[b] = null // append an item into set: map to dummy value
-			setConnections(a, aValues)
-		}
-		
-		//These checks are not needed from a graphical envirnoment, 
-		// which will have no option to select non-existing for connection
-		//if (graph.get(a) == null) throw new Error("node " + a + " does not exist")
-		//if (graph.get(b) == null) throw new Error("node " + b + " does not exist")
-		
-		return compound(function() {
-			half(a,b)
-			half(b,a)
-		})
-	}
-	
-	function initializeModel (model) {
-		function append(title, dict) {
-			model.getRoot().set(title, model.createMap(dict));
-		}
-		append('configuration', {nodeIdentity:100, edgeIdntity:100})
-		append('graph', {a:"b,c", b:"a", c:"a",m:""})
-	}
-
-	function onMapValueChanged (evt) {
-		//console.log("event = " + showAll(evt))
-		
-		// null => "" when created
-		// "something" => null when deleted
-		if (evt.newValue == null) console.log("remove event: deleted " + evt.property)
-		else if (evt.oldValue == null) console.log("remove event: created " + evt.property)
-		else console.log("remove event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)
-		printAll()
-	}
-	
-	function printAll() {
-		document.querySelector("#textarea1").value = ""
-		var keys = graph.keys()
-		for (i in keys) {
-			//console.log(keys[i] + " => " + graph.get(keys[i]))
-			document.querySelector("#textarea1").value += keys[i] + " => " + graph.get(keys[i]) + "\n"
-		}
-		
-	}
-	
-	
-    function onFileLoaded(doc) {
-		model = doc.getModel()
-		graph = model.getRoot().get('graph');
-		graph.addEventListener(
-			gapi.drive.realtime.EventType.VALUE_CHANGED,
-			onMapValueChanged);
-			
-		printAll()
-/*      textArea2.onkeyup = function() {
-        string.setText(textArea2.value);
-      };*/
-
-      undoButton.onclick = function(e) {
-        model.undo();
-      };
-      redoButton.onclick = function(e) {
-        model.redo();
-      };
-
-      // Add event handler for UndoRedoStateChanged events.
-      var onUndoRedoStateChanged = function(e) {
-        undoButton.disabled = !e.canUndo;
-        redoButton.disabled = !e.canRedo;
-      };
-      model.addEventListener(gapi.drive.realtime.EventType.UNDO_REDO_STATE_CHANGED, onUndoRedoStateChanged);
-    }
-
-    var realtimeOptions = {
-      // * Client ID from the console.
-      clientId: '1088706429537-4oqhqr7o826ditbok23sll1rund1jim1.apps.googleusercontent.com',
-	  
-       //* The ID of the button to click to authorize. Must be a DOM element ID.
-      authButtonElementId: 'authorizeButton',
-      initializeModel: initializeModel, // Function to be called when a Realtime model is first created.
-      autoCreate: true, // Autocreate files right after auth automatically.
-      onFileLoaded: onFileLoaded, // Function to be called every time a Realtime file is loaded.
-      registerTypes: null, // No action to inityalize custom Collaborative Objects types.
-      afterAuth: null // No action after authorization and before loading files.
-    }
-
-    function startRealtime() {
-      rtclient.loaderInst = new rtclient.RealtimeLoader(realtimeOptions);
-      rtclient.loaderInst.start();
-    }
-
-  </script>
+	<table><tr><td>
+	<textarea id="textarea1" disabled rows=7 align="right"></textarea>
+	</td>
+		<td><li>	Edit the graph using the buttons. 
+	Thanks to Google Drive Realtime API, you can <a target="_blank" href="#">do it collaboratively.</a> 
+	This might be an overkill but I will exploit it for graphical edit. </li><li>
+	<a href="javascript:window.open('cytoscape.html' + location.hash)">Cytoscape</a> loads 
+	realtime data but fails to make connections. Cytoscape seems good visualizer but unsatisfactory editor.</li><li>
+	<a href="javascript:window.open('graph-creator.html' + location.hash)">Graph Creator</a> 
+	Thoug it does support "make connections" facility, it does not support automatic layout and
+	Integration with Realtime Model was not even started.</li>
+		</td>	</tr>
+	</table>
+  
 </body>
 </html>

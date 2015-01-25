@@ -1,0 +1,252 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <title>Google Drive Realtime quickstart</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=9">
+</head>
+
+<!-- Start Realtime when the body has loaded. -->
+<body onLoad='startRealtime()'>
+
+  <button id="authorizeButton" disabled>You must authorize</button>
+  <button id="pick" onclick="pick()">Pick another file</button>
+  <!-- Undo and redo buttons. -->
+  <button id="undoButton" disabled>Undo</button>
+  <button id="redoButton" disabled>Redo</button>
+  <input id="input1" size=5></input>
+  <button id="plusNewNode">+</button>
+<p>
+
+  <div id="cy"></div>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+  <script src="http://cytoscape.github.io/cytoscape.js/api/cytoscape.js-latest/cytoscape.min.js"></script>
+  
+  <style>
+	body { 
+	  font: 14px helvetica neue, helvetica, arial, sans-serif;
+	}
+
+	#cy {
+	  height: 100%;
+	  width: 100%;
+		z-index: -1;
+	  position: absolute;
+	  left: 0;
+	  top: 0;
+	}
+
+	/*#info {
+	  color: #c88;
+	  font-size: 1em;
+	  position: absolute;
+	  z-index: -1;
+	  left: 1em;
+	  top: 1em;
+	}*/
+	</style>
+	
+  <script>
+  
+// TODO: replace current immediate graph update model with 
+// model-update-event-driven approach. This will enable 
+// collaborative edit.
+
+
+	// called by controller.js
+	function printAll() { 
+		var keys = graph.keys()
+		for (i in keys) {
+			console.log(keys[i] + " => " + graph.get(keys[i]))
+		}
+	}
+
+	// 	$(function(){ // on dom ready
+	function onFileLoaded(dummydoc) { 
+
+	$('#cy').cytoscape({
+	  style: cytoscape.stylesheet()
+		.selector('node')
+		  .css({
+			'content': 'data(id)',
+			'text-valign': 'center',
+			'color': 'white',
+			'text-outline-width': 2,
+			'text-outline-color': '#888'
+		  })
+		//.selector('edge').css({'target-arrow-shape': 'triangle'})
+		.selector(':selected')
+		  .css({
+			'background-color': 'black',
+			'line-color': 'black',
+			'target-arrow-color': 'black',
+			'source-arrow-color': 'black'
+		  })
+		.selector('.faded')
+		  .css({
+			'opacity': 0.25,
+			'text-opacity': 0
+		  }),
+	  
+/*	  elements: {
+		nodes: [{ data: { id: 'j', name: 'Jerry' } }, { data: { id: 'e', name: 'Elaine' } }, { data: { id: 'k', name: 'Kramer' } },{ data: { id: 'g', name: 'George' } }],
+		edges: [{ data: { source: 'j', target: 'k' } },{ data: { source: 'j', target: 'g' } },{ data: { source: 'e', target: 'j' } },{ data: { source: 'k', target: 'e' } },{ data: { source: 'k', target: 'g' } },{ data: { source: 'g', target: 'j' } }]},
+*/	  
+		//zoom: 1	, minZoom: 1e-50, maxZoom: 1e50, zoomingEnabled: true,
+		wheelSensitivity: 1/2,
+
+	  // on graph initial layout done (could be async depending on layout...)
+	  ready: function(){
+
+		window.cy = this;
+		
+		// giddy up...
+		
+		cy.elements().unselectify();
+		
+		cy.on('tap', 'node', function(e){
+		  var node = e.cyTarget; 
+		  var neighborhood = node.neighborhood().add(node);
+		  
+		  cy.elements().addClass('faded');
+		  neighborhood.removeClass('faded');
+		});
+		
+		cy.on('tap', function(e){
+		  if( e.cyTarget === cy ){
+			cy.elements().removeClass('faded');
+		  }
+		});
+		
+		cy.on('cxttapstart', function(e){
+			console.log('cxttapstart at ' + over)
+		});
+		cy.on('cxttapend', function(e){
+			console.log('cxttapend at ' + over)
+		});
+
+		var mousecnt = 0 
+		var over
+		cy.on('mouseover', 'node', function(e){
+			over = e.cyTarget.data().id
+			console.log((mousecnt++) + " mouseover " + over)
+		});
+		cy.on('mouseout', 'node', function(e){
+			console.log((mousecnt++) + " mouseout " + over)
+			over = undefined
+		});
+
+		/*
+		// node double click
+		var tappedBefore = null;
+		cy.on('tap', function(event) {
+		  var tappedNow = event.cyTarget;
+		  setTimeout(function(){ tappedBefore = null; }, 300);
+		  if(tappedBefore === tappedNow) {
+			tappedNow.trigger('doubleTap');
+			tappedBefore = null;
+		  } else {
+			tappedBefore = tappedNow;
+		  }
+		});
+
+		cy.on('doubleTap', 'node', function(event) { alert('double tap') });
+		*/
+		
+		plusNewNode.onclick = function() {
+			var newNode = mkNode(input1.value)[0]
+			newNode.layout(lOptions)
+			var selected = cy.nodes(':selected')
+			if (selected.length != 0) 
+				mkEdge(selected, newNode)
+		}
+
+		function mkNode(name) {
+			return cy.add([{ group: "nodes", data: { id: name }/*, position: { x: 100, y: 100 }*/ },])[0];
+			//console.log(keys[i] + " => " + graph.get(keys[i]))
+		}
+		
+		var edgeIdentity = 0
+		function mkEdge(node1, node2) {
+			var eid = edgeIdentity++ // todo: hexadecimal
+			return cy.add([
+				  { group: "edges", data: { id: "e" + eid, source: node1.data().id, target: node2.data().id } }
+			]);
+		}
+		function mkEdgeTry(node1, id2) { // b can not exist
+			var targetNodes = cy.nodes('#' + id2);
+			return (targetNodes.length == 0) ? null : mkEdge(node1, targetNodes[0])
+		}
+	  lOptions = 
+		//{name: 'grid', padding: 10},
+	  
+	  { name: 'concentric',
+		fit: true, // whether to fit the viewport to the graph
+		padding: 30, // the padding on fit
+		startAngle: 3/2 * Math.PI, // the position of the first node
+		counterclockwise: false, // whether the layout should go counterclockwise/anticlockwise (true) or clockwise (false)
+		minNodeSpacing: 40, // min spacing between outside of nodes (used for radius adjustment)
+		boundingBox: undefined, // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
+		avoidOverlap: true, // prevents node overlap, may overflow boundingBox if not enough space
+		height: undefined, // height of layout area (overrides container height)
+		width: undefined, // width of layout area (overrides container width)
+		concentric: function(){ // returns numeric value for each node, placing higher nodes in levels towards the centre
+			return this.degree();
+		},
+		levelWidth: function(nodes){ // the variation of concentric values in each level
+			return nodes.maxDegree() / 4;
+		},
+		animate: true, // whether to transition the node positions
+		animationDuration: 500, // duration of animation in ms if enabled
+		ready: undefined, // callback on layoutready
+		stop: undefined // callback on layoutstop
+  
+	  }
+	  
+		/*{
+		  name: 'breadthfirst',
+
+		  fit: true, // whether to fit the viewport to the graph
+		  directed: false, // whether the tree is directed downwards (or edges can point in any direction if false)
+		  padding: 30, // padding on fit
+		  circle: false, // put depths in concentric circles if true, put depths top down if false
+		  boundingBox: undefined, // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
+		  avoidOverlap: true, // prevents node overlap, may overflow boundingBox if not enough space
+		  roots: undefined, // the roots of the trees
+		  maximalAdjustments: 0, // how many times to try to position the nodes in a maximal way (i.e. no backtracking)
+		  animate: false, // whether to transition the node positions
+		  animationDuration: 500, // duration of animation in ms if enabled
+		  ready: undefined, // callback on layoutready
+		  stop: undefined // callback on layoutstop
+		},*/
+
+		var keys = graph.keys()
+		cy.startBatch()
+		try {
+			for (var i in keys) {
+				var key = keys[i]
+				var associations = listConnections(key)
+				var keyNode = mkNode(key)
+				for (var j in associations) {
+					mkEdgeTry(keyNode, associations[j])
+				}
+			}
+		} finally {
+			cy.endBatch()
+		}
+		cy.layout(lOptions)
+
+	  } // cytoscape.ready
+	  
+	  
+	}) // cytoscape init
+
+	}; // fileLoaded
+
+  </script>
+  
+  <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
+  <script type="text/javascript" src="realtime-client-utils.js"></script>
+  <script type="text/javascript" src="controller.js"></script>
+</body>
+</html>

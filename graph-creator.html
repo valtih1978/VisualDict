@@ -1,0 +1,44 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <title>Google Drive Realtime quickstart</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=9">
+  <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
+  <script type="text/javascript" src="realtime-client-utils.js"></script>
+  <script type="text/javascript" src="controller.js"></script>
+</head>
+
+<!-- Start Realtime when the body has loaded. -->
+<body onLoad='startRealtime()'>
+
+  <button id="authorizeButton" disabled>You must authorize</button>
+  <button id="pick" onclick="pick()">Pick another file</button>
+  <!-- Undo and redo buttons. -->
+  <button id="undoButton" disabled>Undo</button>
+  <button id="redoButton" disabled>Redo</button>
+<p>
+
+    <link rel="stylesheet" href="ip/graph-creator.css" />
+
+    <div id="toolbox">
+      <input type="file" id="hidden-file-upload"><input id="upload-input" type="image" title="upload graph" src="ip/create-graph-upload-icon.png" alt="upload graph"> <input type="image" id="download-input" title="download graph" src="ip/create-graph-download-icon.png" alt="download graph"> <input type="image" id="delete-graph" title="delete graph" src="ip/create-graph-trash-icon.png" alt="delete graph"> 
+    </div>
+
+    <script src="//d3js.org/d3.v3.js" charset="utf-8"></script>    
+    <script src="//cdn.jsdelivr.net/filesaver.js/0.1/FileSaver.min.js"></script>
+    <script src="ip/graph-creator.js"></script>
+
+
+  <script>
+	function printAll() {
+		var keys = graph.keys()
+		for (i in keys) {
+			console.log(keys[i] + " => " + graph.get(keys[i]))
+		}
+		
+	}
+
+  </script>
+</body>
+</html>

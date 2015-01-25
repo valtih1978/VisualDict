@@ -8,9 +8,6 @@ var rtclient = rtclient || {}
  * MIME type for newly created Realtime files.
  * @const
  */
-appId = 
-	//"alpinedogfish833" 
-	"alpine-dogfish-833"
 
 rtclient.REALTIME_MIMETYPE = 'application/vnd.google-apps.drive-sdk'
 function mimeType() {
