@@ -4,9 +4,7 @@
 <head>
   <title>Google Drive Realtime quickstart</title>
   <meta http-equiv="X-UA-Compatible" content="IE=9">
-
   <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
-
   <script type="text/javascript" src="realtime-client-utils.js"></script>
 </head>
 
@@ -20,22 +18,22 @@
   <button id="redoButton" disabled>Redo</button>
   Thanks to Google Drive Realtime API you get <a target="_blank" href="#">collab</a> overkill for free
 <p>
-  <button onclick="createNode(validateName(a.value))">New Node</button>
+  <button onclick="createNode(validateName(aval()))">New Node</button>
   <button onclick="deleteNode()">Delete Node</button>
   <button onclick="renameNode()">Rename Node</button>
-  <button onclick="connectSpecified(a.value, b.value)">Connect</button> 
+  <button onclick="connectSpecified(aval(), bval())">Connect</button> 
   <button onclick="disconnectNodes()">Disconnect</button>
-  <input id="a"/><input id="b"/>
+  <input id="a_complex_id"/><input id="b_complex_id"/>
 	<button onclick="printAll()">Show all</button>
 	<p>
 	<textarea id="textarea1" disabled rows=7></textarea>
 	
   <script>
 	var graph ; var model
-	var a = document.querySelector("#a");
-	var b = document.querySelector("#b");
+	function aval() {return document.querySelector("#a_complex_id").value.trim()} ;
+	function bval() {return document.querySelector("#b_complex_id").value.trim()} ;
 
-	function validateName(name) {
+	function validate(name) {
 		name = name.trim()
 		if (name.indexOf(',') != -1) throw new Error( "Comma is forbidden in the words")
 		if (name.length == 0) throw new Error("Name must be not empty")
@@ -73,7 +71,7 @@
 		}
 	}
 	function renameNode() {
-		var newName = validateName(b.value)
+		var newName = validateName(bval())
 		return compound(function() {
 			var mustConnectTo = deleteNode()
 			console.log("deleted connections with " + mustConnectTo)
@@ -85,15 +83,16 @@
 	function deleteNode() {
 		return compound(function() {
 			// can we combine multiple update requests into one in google realtime?
-			var connectedTo = listConnections(a.value)
+			var connectedTo = listConnections(aval())
 			for (i in connectedTo)
-				disconnectFrom(connectedTo[i], a.value)
+				disconnectFrom(connectedTo[i], aval())
 				
-			graph.delete(a.value);
+			graph.delete(aval());
 			return connectedTo
 		})
 	}
 	function disconnectFrom(fromKey, entry) {
+		//console.log("deleted " + endtry + " from " + fromKey)
 		var connections = connectionSet(fromKey)
 		delete connections [entry]
 		setConnections(fromKey, connections)
@@ -105,20 +104,24 @@
 	
 	function disconnectNodes() {
 		return compound(function() {
-			disconnectFrom(a.value, b.value)
-			disconnectFrom(b.value, a.value)
-			console.log("disconnecting " + b.value + " from " + a.value + "("+graph.get(a.value)+")")
+			disconnectFrom(aval(), bval())
+			disconnectFrom(bval(), aval())
+			console.log("disconnecting " + bval() + " from " + aval() + "("+graph.get(aval())+")")
 		})
 	}
 	
 	function connectSpecified(a,b) {
 		function half(a,b) {
 			var aValues = connectionSet(a)
-			aValues[b] = null // dummy value
+			aValues[b] = null // append an item into set: map to dummy value
 			setConnections(a, aValues)
 		}
 		
-		console.log("connecting " + b + " to " + a)
+		//These checks are not needed from a graphical envirnoment, 
+		// which will have no option to select non-existing for connection
+		//if (graph.get(a) == null) throw new Error("node " + a + " does not exist")
+		//if (graph.get(b) == null) throw new Error("node " + b + " does not exist")
+		
 		return compound(function() {
 			half(a,b)
 			half(b,a)
@@ -138,7 +141,9 @@
 		
 		// null => "" when created
 		// "something" => null when deleted
-		console.log("model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)
+		if (evt.newValue == null) console.log("remove event: deleted " + evt.property)
+		else if (evt.oldValue == null) console.log("remove event: created " + evt.property)
+		else console.log("remove event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)
 		printAll()
 	}
 	
