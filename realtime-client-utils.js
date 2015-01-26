@@ -230,7 +230,7 @@ rtclient.RealtimeLoader = function(options) {
 rtclient.RealtimeLoader.prototype.redirectTo = function(fileId, reload) {
 
   // Naive URL construction.
-  var newUrl = './#fileId=' + fileId;
+  var newUrl = '#fileId=' + fileId;
   // Using HTML URL re-write if available.
   if (window.history && window.history.replaceState)
     window.history.replaceState("Google Drive Realtime API Playground", "Google Drive Realtime API Playground", newUrl);

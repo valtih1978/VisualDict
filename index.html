@@ -47,14 +47,48 @@
 	<table><tr><td>
 	<textarea id="textarea1" disabled rows=7 align="right"></textarea>
 	</td>
+	<script>
+	function redirect(url) {
+		window.open(url + location.hash)
+	}
+	</script>
 		<td><li>	Edit the graph using the buttons. 
 	Thanks to Google Drive Realtime API, you can <a target="_blank" href="#">do it collaboratively.</a> 
 	This might be an overkill but I will exploit it for graphical edit. </li><li>
-	<a href="javascript:window.open('cytoscape.html' + location.hash)">Cytoscape</a> loads 
+	<a href="javascript:redirect('cytoscape.html')">Cytoscape</a> loads 
 	realtime data but fails to make connections. Cytoscape seems good visualizer but unsatisfactory editor.</li><li>
-	<a href="javascript:window.open('graph-creator.html' + location.hash)">Graph Creator</a> 
+	<a href="javascript:redirect('graph-creator.html')">Graph Creator</a> 
 	Thoug it does support "make connections" facility, it does not support automatic layout and
 	Integration with Realtime Model was not even started.</li>
+	<li>
+		I have later realized that I can connect nodes like this 
+		https://dl.dropboxusercontent.com/u/4189520/GraphJS/graphjs.html 
+		-- simply by selecting two nodes. It also worth to try web-cola
+		and <a href="javascript:redirect('vivagraph.html')">VivaGraphJS</a> in place of cytoscape. They seem to provide better 
+		and be more "dynamic" layout with less verbose API.
+		<p> VivaGraph looks very nice and allows a lot of freedom 
+			in drawing the objects. You can specify connections (links)
+			without nodes (nodes are added automatically).
+			However, events, eg. "hover" areachieved
+			by manual drawing of the objects, which I do not like. 
+			This issue is further aggraviated by stupid API, where we have 
+			to write Viva.Graph.svg('circle').attr('r', 10).attr("fill", "red")
+			instead of Viva.Graph.svg('circle', {r:1, color:"red"}).
+			<p>VivoGraph maintains <a href="http://anvaka.github.io/graph-drawing-libraries/#/all">
+			a list of graphical libraries</a>. <a href="http://anvaka.github.io/graph-drawing-libraries/#/library/dhotson_springy">
+			Springy</a> example seems the thing that we are lookig for. It howerver 
+			drwas arrows (which might be confusing) and seems too dynamic 
+			(use too much CPU resources). But more static Cytoscape is hardly a solution
+			because its layout is too dumb. 
+	</li>
+	<li>
+	<a href="javascript:redirect('almende-vis.html')">
+		almende_vis</a> and <a href="http://graphalchemist.github.io/Alchemy/#/examples">Graph Alchemist</a> 
+	may solve this problem. It allows to select multiple nodes is the 
+	example and stabilizes (stops consuming CPU cycles) after a while. 
+	Almende network has strange multiselect behaviour: you must keep longer
+	rather than shift-click. <a href="view-source:http://almende.github.io/chap-links-library/js/network/examples/example12_adding_nodes.html">Adding nodes is terrible</a> though. It requireds creating intermediate tables. The funny thing is that mine network does not have any addNode(s)/addLink(s) methods!
+	</li>
 		</td>	</tr>
 	</table>
   
