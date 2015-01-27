@@ -42,15 +42,13 @@
   <input id="a_complex_id" size="4"/><input id="b_complex_id" size="4"/>
 	<button onclick="printAll()">Show all</button>
 	<p>
-	<table><tr><td>
-	<textarea id="textarea1" disabled rows=7 align="right"></textarea>
-	</td>
+	<textarea id="textarea1" disabled rows=7 align="right" style="float:left;margin:0px 10px 0px 0px;"></textarea>
 	<script>
 	function redirect(url) {
 		window.open(url + location.hash)
 	}
 	</script>
-		<td><li>	Edit the graph using the buttons. 
+		<li>	Edit the graph using the buttons. 
 	Thanks to Google Drive Realtime API, you can <a target="_blank" href="#">do it collaboratively.</a> 
 	This might be an overkill but I will exploit it for graphical edit. </li><li>
 	<a href="javascript:redirect('cytoscape.html')">Cytoscape</a> loads 
@@ -87,8 +85,12 @@
 	Almende network has strange multiselect behaviour: you must keep longer
 	rather than shift-click. <a href="view-source:http://almende.github.io/chap-links-library/js/network/examples/example12_adding_nodes.html">Adding nodes is terrible</a> though. It requireds creating intermediate tables. The funny thing is that mine network does not have any addNode(s)/addLink(s) methods!
 	</li>
-		</td>	</tr>
-	</table>
+	<li>
+	<a href="http://arborjs.org">arborjs.org</a> features autoexpand on mouse hover.
+	</li>
+	<p>
+	We will load data incrementally. If user wants to clean up the screen - let him refresh.
+	We will also maintain uneditable but seekable list, like phrasebook does for search.
   
 </body>
 </html>
