@@ -16515,12 +16515,17 @@ return /******/ (function(modules) { // webpackBootstrap
   }
   /**
    * handle tap/click event: select/unselect a node
+   * Dragging or holding the node does not invoke this event.
    * @private
    */
   Network.prototype._onTap = function (event) {
     var pointer = this._getPointer(event.gesture.center);
     this.pointerPosition = pointer;
-    this._handleTap(pointer);
+
+		console.log('on tap')
+	event.gesture.srcEvent && (event.gesture.srcEvent.shiftKey)
+		? this._handleOnHold(pointer)
+		: this._handleTap(pointer);
 
   };
 
@@ -32773,6 +32778,7 @@ return /******/ (function(modules) { // webpackBootstrap
    * @private
    */
   exports._createManipulatorBar = function() {
+  console.log('_createManipulatorBar')
     // remove bound functions
     if (this.boundFunction) {
       this.off('select', this.boundFunction);
@@ -32959,6 +32965,7 @@ return /******/ (function(modules) { // webpackBootstrap
    * @private
    */
   exports._createAddEdgeToolbar = function() {
+  console.log('_createAddEdgeToolbar')
     // clear the toolbar
     this._clearManipulatorBar();
     this._unselectAll(true);
@@ -33148,7 +33155,7 @@ return /******/ (function(modules) { // webpackBootstrap
   exports._handleConnect = function(pointer) {
     if (this._getSelectedNodeCount() == 0) {
       var node = this._getNodeAt(pointer);
-
+		console.log('handle connect ' + node)
       if (node != null) {
         if (node.clusterSize > 1) {
           alert(this.constants.locales[this.constants.locale]['createEdgeError'])
@@ -33162,7 +33169,7 @@ return /******/ (function(modules) { // webpackBootstrap
           var targetNode = supportNodes['targetNode'];
           targetNode.x = node.x;
           targetNode.y = node.y;
-
+		console.log('created connectionEdge between that node and support.new node(targetNode)')
           // create a temporary edge
           this.edges['connectionEdge'] = new Edge({id:"connectionEdge",from:node.id,to:targetNode.id}, this, this.constants);
           var connectionEdge = this.edges['connectionEdge'];
@@ -33192,6 +33199,7 @@ return /******/ (function(modules) { // webpackBootstrap
   };
 
   exports._finishConnect = function(event) {
+	console.log('finish connect ' + this._getSelectedNodeCount())
     if (this._getSelectedNodeCount() == 1) {
       var pointer = this._getPointer(event.gesture.center);
       // restore the drag function
@@ -33200,6 +33208,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
       // remember the edge id
       var connectFromId = this.edges['connectionEdge'].fromId;
+		console.log('fromid=' + connectFromId)
 
       // remove the temporary nodes and edge
       delete this.edges['connectionEdge'];
