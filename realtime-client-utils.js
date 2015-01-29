@@ -11,7 +11,7 @@ var rtclient = rtclient || {}
 
 rtclient.REALTIME_MIMETYPE = 'application/vnd.google-apps.drive-sdk'
 function mimeType() {
-	return rtclient.REALTIME_MIMETYPE + "." + realtimeOptions.clientId.split('-')[0]
+	return rtclient.REALTIME_MIMETYPE + "." + rtclient.clientId.split('-')[0]
 }
 
 /**
@@ -29,7 +29,7 @@ rtclient.getParams = function() {
       params[paramStr[0]] = unescape(paramStr[1]);
     }
   }
-  console.log("params = " + showAll(params));
+  console.log("params = " + ValUtils.dictToStr(params));
   return params;
 }
 
@@ -47,12 +47,12 @@ rtclient.params = rtclient.getParams();
  * @param key {string} option key.
  * @param defaultValue {Object} default option value (optional).
  */
-rtclient.getOption = function(options, key, defaultValue) {
-  var value = options[key] == undefined ? defaultValue : options[key];
+rtclient.getOption = function(key, defaultValue) {
+  var value = rtclient.options[key] == undefined ? defaultValue : rtclient.options[key];
   if (value == undefined) {
     console.error(key + ' should be present in the options.');
   }
-  console.log(value);
+  //console.log(key + ' getOpt => ' + value);
   return value;
 }
 
@@ -64,10 +64,11 @@ rtclient.getOption = function(options, key, defaultValue) {
  *
  *    1. "clientId", the Client ID from the console
  */
-rtclient.Authorizer = function(options) {
-  this.clientId = rtclient.getOption(options, 'clientId');
+rtclient.Authorizer = function() {
+  rtclient.clientId = rtclient.getOption('clientId');
+  console.log('authorizer clientId = ' +  rtclient.clientId)
   // Get the user ID if it's available in the state query parameter.
-  this.authButton = document.getElementById(rtclient.getOption(options, 'authButtonElementId'));
+  this.authButton = document.getElementById(rtclient.getOption('authButtonElementId'));
 }
 
 
@@ -84,43 +85,37 @@ rtclient.Authorizer.prototype.start = function(onAuthComplete) {
   });
 }
 
-	function showAll(dict) {
-		var res = ""
-		for (var i in dict)
-			res += i + " => " + dict[i] + ", "
-		return res
-	}
-
 /**
  * Reauthorize the client with no callback (used for authorization failure).
  * @param onAuthComplete {Function} to call once authorization has completed.
  */
 rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
-  var clientId = this.clientId;
-  var _this = this;
+	var clientId = rtclient.clientId
+	var _this = this;
 
-  	console.log('authorizer.authorizing: client id = ' + clientId)
+	console.log('authorizer.authorizing: client id = ' + clientId)
 
-  var handleAuthResult = function(authResult) {
-	function log(title) {
-		console.log('auth '+title+' = ' + showAll(authResult))
-		console.log(' error status = ' + showAll(authResult.status))
-	}
-    if (authResult && !authResult.error) {
-		log("ok")
-      _this.authButton.disabled = true;
-      //_this.fetchUserId(onAuthComplete);
-	  onAuthComplete()
-    } else {
-		log("error")
-      _this.authButton.disabled = false;
-      _this.authButton.onclick = function() {authorize(false)};
-    }
-  };
+	var handleAuthResult = function(authResult) {
+		function log(title) {
+			console.log('auth '+title+' = ' + ValUtils.dictToStr(authResult))
+			console.log(' error status = ' + ValUtils.dictToStr(authResult.status))
+		}
+		if (authResult && !authResult.error) {
+			log("ok")
+		  _this.authButton.disabled = true;
+		  //_this.fetchUserId(onAuthComplete);
+		  onAuthComplete()
+		} else {
+			log("error")
+		  _this.authButton.disabled = false;
+		  _this.authButton.onclick = function() {authorize(false)};
+		}
+	};
 
-	function auth(access) { return "https://www.googleapis.com/auth/drive." + access }
+  function auth(access) { return "https://www.googleapis.com/auth/drive." + access }
 
   function authorize(nopopup) {
+	console.log('authorize '  + nopopup)
     gapi.auth.authorize({
       client_id: clientId,
       scope: [
@@ -212,13 +207,14 @@ rtclient.parseState = function(stateParam) {
  */
 rtclient.RealtimeLoader = function(options) {
   // Initialize configuration variables.
-  this.onFileLoaded = rtclient.getOption(options, 'onFileLoaded');
-  this.initializeModel = rtclient.getOption(options, 'initializeModel');
-  this.registerTypes = rtclient.getOption(options, 'registerTypes', function(){});
-  this.afterAuth = rtclient.getOption(options, 'afterAuth', function(){})
-  this.autoCreate = rtclient.getOption(options, 'autoCreate', false); // This tells us if need to we automatically create a file after auth.
-  this.defaultTitle = rtclient.getOption(options, 'defaultTitle', 'VisualDict');
-  this.authorizer = new rtclient.Authorizer(options);
+	rtclient.options = options
+	this.onFileLoaded = rtclient.getOption('onFileLoaded');
+	this.initializeModel = rtclient.getOption('initializeModel');
+	this.registerTypes = rtclient.getOption('registerTypes', function(){});
+	this.afterAuth = rtclient.getOption('afterAuth', function(){})
+	this.autoCreate = rtclient.getOption('autoCreate', false); // This tells us if need to we automatically create a file after auth.
+	this.defaultTitle = rtclient.getOption('defaultTitle', 'VisualDict');
+	this.authorizer = new rtclient.Authorizer();
 }
 
 
@@ -292,7 +288,7 @@ rtclient.RealtimeLoader.prototype.load = function() {
   // Creating the error callback.
   var authorizer = this.authorizer;
 
-	console.log("RT.load, rclient.params=" + showAll(rtclient.params) + "")
+	console.log("RT.load, rclient.params=" + ValUtils.dictToStr(rtclient.params) + "")
   // We have file IDs in the query parameters, so we will use them to load a file.
   if (fileId) {
       gapi.drive.realtime.load(fileId, this.onFileLoaded, this.initializeModel, this.handleErrors);
@@ -330,7 +326,7 @@ rtclient.RealtimeLoader.prototype.createNewFileAndRedirect = function() {
 	// Pick file automatically if one already exists
     gapi.client.drive.files.list({q:"mimeType = '"+mimeType()+"' and trashed=false"}).execute(function(resp) {
 		// if next page token -- fetch another page
-		console.log("already exist " + resp.items.length + " files, first file = " + showAll(resp.items[0]))
+		console.log("already exist " + resp.items.length + " files, first file = " + ValUtils.dictToStr(resp.items[0]))
 		if (resp.items.length > 0) {
 			if (resp.items.length == 1) _this.redirectTo(resp.items[0].id);
 			else pick()
@@ -369,14 +365,14 @@ function pick() {
 		view.setMimeTypes(mimeType());
 		var picker = new google.picker.PickerBuilder()
 		  .enableFeature(google.picker.Feature.NAV_HIDDEN)
-		  //.setAppId(realtimeOptions.clientId.split('-')[0])
+		  //.setAppId(realtimeOptions.split('-')[0])
 		  .setOAuthToken(token)
 		  .addView(view)
 		  //.setDeveloperKey(apiKey)
 		  //.addView(new google.picker.DocsUploadView())
 		  .setCallback(function(resp){
-				//console.log("picked " + showAll(resp))
-				//console.log("docs[0]" + showAll(resp.docs[0]))
+				//console.log("picked " + ValUtils.dictToStr(resp))
+				//console.log("docs[0]" + ValUtils.dictToStr(resp.docs[0]))
 				if (resp.action == 'picked') 
 					rtclient.loaderInst.redirectTo(resp.docs[0].id, true);
 			})

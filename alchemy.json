@@ -1,0 +1,41 @@
+
+
+{
+  "comment": "Charlize Theron's 'ego' network as GraphJSON",
+  "nodes": [
+    {
+      "caption": "Screen Actors ",
+      "type": "award",
+      "category": "award",
+      "id": 1
+    },
+    {
+      "caption": "Children ",
+      "type": "movie",
+      "id": 2
+    },
+    {
+      "caption": "Sleepwalking",
+      "type": "movie",
+      "id": 3
+    }
+
+  ],
+  "edges": [
+    {
+      "source": 1,
+      "target": 2,
+      "caption": "ACTED_IN"
+    },
+    {
+      "source": 2,
+      "target": 3,
+      "caption": "ACTED_IN"
+    },
+    {
+      "source": 3,
+      "target": 1,
+      "caption": "NOMINATED"
+    }
+  ]
+}
