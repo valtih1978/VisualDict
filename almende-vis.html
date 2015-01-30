@@ -13,30 +13,28 @@ recede the mouse too far away.
   <script type="text/javascript" src="controller.js"></script>
 
 <div id="network_div" style=""></div>
-<div id="controls">
-  <a href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a>  
-  <button id="authorizeButton" disabled>You must authorize</button>
-  <button id="pickButton" onclick="pick()">Pick another file</button>
+
+  <a class="controls" href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a>  
+  <button class="controls" id="authorizeButton" disabled>You must authorize</button>
+  <button class="controls" id="pickButton" onclick="pick()">Pick another file</button>
   <!-- Undo and redo buttons. -->
-  <button id="undoButton" disabled>Undo</button>
-  <button id="redoButton" disabled>Redo</button>
-  <button onclick="deleteButtonClicked()">Delete Selected</button>
-  <button id="rename_button" onclick="renameButtonClicked()" disabled>Rename</button>
-  <button onclick="addnodeButtonClicked()">add node</button>
-  <button id="connect_button" onclick="connectButtonClicked([])" disabled>connect</button>
-  <button id="disconnect_button" onclick="disconnectButtonClicked()" disabled>break</button>
-  <input id="input1"/>
-  <span id="ConnectMode_span" style="display:none">connect mode</span>
-	</div>
+  <button class="controls" id="undoButton" disabled>Undo</button>
+  <button class="controls" id="redoButton" disabled>Redo</button>
+  <button class="controls"onclick="deleteButtonClicked()">Delete Selected</button>
+  <button class="controls"id="rename_button" onclick="renameButtonClicked()" disabled>Rename</button>
+  <button class="controls"onclick="addnodeButtonClicked()">add node</button>
+  <button class="controls"id="connect_button" onclick="connectButtonClicked([])" disabled>connect</button>
+  <button class="controls"id="disconnect_button" onclick="disconnectButtonClicked()" disabled>break</button>
+  <input class="controls"id="input1"/>
+  <span class="controls"id="ConnectMode_span" style="display:none">connect mode</span>
 	<style type="text/css">
 	body {font-family:verdana}
 	.network-manipulationLabel {display: none}
-	#controls {
+	.controls {
 		left: 0; top: 0;
-		position: absolute; 
+		position: relative; 
 		margin: 0;
 		padding: 0;
-
 	}
 	#network_div {
 		left: 0; top: 0;
