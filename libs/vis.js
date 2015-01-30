@@ -33222,7 +33222,7 @@ return /******/ (function(modules) { // webpackBootstrap
         }
         else {
           this._createEdge(connectFromId,node.id);
-          this._createManipulatorBar();
+          //this._createManipulatorBar();
         }
       }
       this._unselectAll();
