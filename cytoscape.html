@@ -54,15 +54,15 @@
 
 
 	// called by controller.js
-	function printAll() { 
-		var keys = graph.keys()
+	function printAll() {
+		var keys = controller.graph.keys()
 		for (i in keys) {
-			console.log(keys[i] + " => " + graph.get(keys[i]))
+			console.log(keys[i] + " => " + controller.graph.get(keys[i]))
 		}
 	}
 
 	// 	$(function(){ // on dom ready
-	function onFileLoaded(dummydoc) { 
+	function onFileLoaded() { 
 
 	$('#cy').cytoscape({
 	  style: cytoscape.stylesheet()
@@ -220,12 +220,12 @@
 		  stop: undefined // callback on layoutstop
 		},*/
 
-		var keys = graph.keys()
+		var keys = controller.graph.keys()
 		cy.startBatch()
 		try {
 			for (var i in keys) {
 				var key = keys[i]
-				var associations = listConnections(key)
+				var associations = controller.listConnections(key)
 				var keyNode = mkNode(key)
 				for (var j in associations) {
 					mkEdgeTry(keyNode, associations[j])
@@ -246,6 +246,8 @@
   </script>
   
   <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
+  
+  <script type="text/javascript" src="valutils.js"></script>
   <script type="text/javascript" src="realtime-client-utils.js"></script>
   <script type="text/javascript" src="controller.js"></script>
 </body>

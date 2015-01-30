@@ -7,25 +7,35 @@
    <script type="text/javascript" src="realtime-client-utils.js"></script>
    
    <script>
- 	function aval() {return document.querySelector("#a_complex_id").value.trim()} ;
- 	function bval() {return document.querySelector("#b_complex_id").value.trim()} ;
- 	
  	
  	// called by controller.js
-	function onFileLoaded(doc) {}
+	function onFileLoaded(doc) {printAll()}
  	function printAll() { 
- 		var keys = graph.keys() ; document.querySelector("#textarea1").value = ""
+ 		var keys = controller.graph.keys() ; document.querySelector("#textarea1").value = ""
  		for (i in keys) {
- 			console.log(keys[i] + " => " + graph.get(keys[i]))
- 			document.querySelector("#textarea1").value += keys[i] + " => " + graph.get(keys[i]) + "\n"
+ 			console.log(keys[i] + " => " + controller.graph.get(keys[i]))
+ 			document.querySelector("#textarea1").value += keys[i] + " => " + controller.graph.get(keys[i]) + "\n"
 		}
+	}
+	
+	var refreshTimer
+	function onMapValueChanged(evt) {
+		//console.log("event = " + showAll(evt))
+		
+		// null => "" when created
+		// "something" => null when deleted
+		if (evt.newValue == null) console.log("remote event: deleted " + evt.property)
+		else if (evt.oldValue == null) console.log("remote event: created " + evt.property)
+		else console.log("remote event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)
+		
+		clearTimeout(refreshTimer) ; refreshTimer = setTimeout(printAll, 300);
 	}
 	</script>
    <script type="text/javascript" src="controller.js"></script>
  </head>
  
  <!-- Start Realtime when the body has loaded. -->
-<body onLoad='controller.startRealtime()'>
+<body onLoad='startRealtime()'>
  
    <button id="authorizeButton" disabled>You must authorize</button>
    <button id="pick" onclick="pick()">Pick another file</button>
@@ -33,28 +43,50 @@
    <button id="undoButton" disabled>Undo</button>
    <button id="redoButton" disabled>Redo</button>
  <p>
-	<button onclick="controller.createNode(controller.validateName(aval()))">New Node</button>
-	<button onclick="controller.deleteNode(aval())">Delete Node</button>
-	<button onclick="controller.renameNode()">Rename Node</button>
-	<button onclick="controller.connectSpecified(aval(), bval())">Connect</button> 
-	<button onclick="controller.disconnectNodes(aval(), bval())">Disconnect</button>
-	<input id="a_complex_id" size="4"/><input id="b_complex_id" size="4"/>
+	<button onclick="control('createNode')">New Node</button>
+	<button onclick="control('deleteNode')">Delete Node</button>
+	<button onclick="control('renameNode')">Rename Node</button>
+	<button onclick="control('connect')">Connect</button> 
+	<button onclick="control('disconnectNodes')">Disconnect</button>
+	<input id="a_input" size="4"/><input id="b_input" size="4"/>
  	<button onclick="printAll()">Show all</button>
  	<p>
  	<textarea id="textarea1" disabled rows=7 align="right" style="float:left;margin:0px 10px 0px 0px;"></textarea>
 	<script>
+	
+	function control(func) { 
+		controller[func](a_input.value, b_input.value) 
+	}
+	
 	function redirect(url) {
 		window.open(url + location.hash)
 	}
 	</script>
-	I have chosen Almende Network for visualization. Here <a href="javascript:redirect('almende-vis.html')">is the demo</a>.
-	We need to autoexpand/collapse on mouse hover, like <a href="http://arborjs.org">
-	arborjs.org</a> and <a href="http://maxdemarzi.com/2013/05/29/visualizing-the-news-with-vivagraph-js/">VivaGraph (example down)</a> do.
-
-	<hl>
-		<li>	Edit the graph using the buttons. 
-	Thanks to Google Drive Realtime API, you can <a target="_blank" href="#">do it collaboratively.</a> 
-	This might be an overkill but I will exploit it for graphical edit. </li><li>
+	
+	This is a project to replace <a href="https://translate.google.com">
+	google.translate phrasebook</a>
+	with decent editor, which represents related words graphically.
+	Here you can edit the graph using the buttons. I have 
+	<a href="javascript:redirect('almende-vis.html')">
+	started visual editor</a> based on Almende example 21 (see 
+	below). We need to autoexpand/collapse functionality on mouse 
+	hover, the way <a href="http://arborjs.org"> arborjs.org</a> 
+	and <a href="http://maxdemarzi.com/2013/05/29/visualizing-the-news-with-vivagraph-js/">
+	VivaGraph (example down)</a> do.
+		<p>
+	Unlike most graph models, current graph model does not use 
+	node/edge ids. Nodes are identified with labels. This 
+	complicates renaming and might inflate DB size. Yet, <a href="http://stackoverflow.com/questions/28196581/locking-in-google-realtime-db">
+	not all identifiers are shorter than natural words.</a>
+		<p>
+		Thanks to Google Drive Realtime API, you can 
+	<a target="_blank" href="#">created word nets collaboratively.</a> 
+	This might be an overkill and not very reliable (can be
+	corrupted due to concurrency, see link above) but enableds 
+	undo/redo for free.
+	<hr>
+	Here is mine analysis of graph-drawing engines.<p>
+		<li>
 	<a href="javascript:redirect('cytoscape.html')">Cytoscape</a> loads 
 	realtime data but fails to make connections. Cytoscape seems good visualizer but unsatisfactory editor.</li><li>
 	<a href="javascript:redirect('graph-creator.html')">Graph Creator</a> 

@@ -1,17 +1,30 @@
-<!--TODO: integration with model and hover show/hide
-The must be a hover option to make object visible/hidden.
-Hidden objects disappear when we recede the mouse too far away.
+<!--TODO: 
+
+1. show/hide on hover. The must be a hover option to 
+make object visible/hidden. Hidden objects disappear when we 
+recede the mouse too far away.
+2. List of words for search.
+
 -->
-  <script type="text/javascript" src="ValUtils.js"></script>
+<body onLoad='startRealtime()'>
+  <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
+  <script src="libs/vis.js"></script>
+  <script type="text/javascript" src="realtime-client-utils.js"></script>
   <script type="text/javascript" src="controller.js"></script>
 
 <div id="network_div" style=""></div>
 <div id="controls">
-  <a href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a>  <button onclick="alert(1)">You must authorize</button> <button>open file</button>
+  <a href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a>  
+  <button id="authorizeButton" disabled>You must authorize</button>
+  <button id="pickButton" onclick="pick()">Pick another file</button>
+  <!-- Undo and redo buttons. -->
+  <button id="undoButton" disabled>Undo</button>
+  <button id="redoButton" disabled>Redo</button>
   <button onclick="deleteButtonClicked()">Delete Selected</button>
-  <button id="rename_button" onclick="validateUserInput(renameButtonClicked)" disabled>Rename</button>
-  <button onclick="validateUserInput(addnodeButtonClicked)">add node</button>
+  <button id="rename_button" onclick="renameButtonClicked()" disabled>Rename</button>
+  <button onclick="addnodeButtonClicked()">add node</button>
   <button id="connect_button" onclick="connectButtonClicked([])" disabled>connect</button>
+  <button id="disconnect_button" onclick="disconnectButtonClicked()" disabled>break</button>
   <input id="input1"/>
   <span id="ConnectMode_span" style="display:none">connect mode</span>
 	</div>
@@ -40,9 +53,9 @@ Hidden objects disappear when we recede the mouse too far away.
   <!--
   <script src="http://almende.github.io/vis/dist/vis.js"></script>
   -->
-  <script src="libs/vis.js"></script>
 <script>
 	//
+	
 	["keydown", "keyup"].map(function(evt) {
 		window.addEventListener(evt, function(event) {
 			// Bind to both command (for Mac) and control (for Win/Linux)
@@ -64,109 +77,171 @@ Hidden objects disappear when we recede the mouse too far away.
 			}
 		}, true);
 	})
-		
+	
 
-		var options = {
-			onDelete: function(deleted, cb) {
-				//todo: here we will only schedule node node delete
-				// by removing them from the model. Model update
-				// will call the real node delete (vis does not 
-				// fire callbacks in this case). This will also 
-				// remove empty edges because this is how we protect
-				// our model.
-				function delSelected(subset) {
-					var selected = network.getSelection()[subset]
-					for (var key in selected) {
-						console.log('')
-						this[subset].remove(selected[key]);
-					}
-				}
-				delSelected('nodes')
-				delSelected('edges')
-				return cb(deleted)
-			},
-			dataManipulation: {enabled: true, initiallyVisible:false}
-		};
+	var options = {
+		dataManipulation: {enabled: true, initiallyVisible:false},
+		onConnect: function (edge, callback) {
+			console.log('onUpdate ' + JSON.stringify(edge))
+			controller.connect(edge.from, edge.to)
+			callback([]); // cancel update. Do it with model update
+		}
+	};
 
-		// create an array with nodes
-		nodes = new vis.DataSet();
-		nodes.subscribe('*', function (event, params, senderId) {
-		//$('#nodes').html(toJSON(nodes.get()));
-		});
-		nodes.add([
-			{id: '1', label: 'Node 1'},
-			{id: '2', label: 'Node 2'},
-			{id: '3', label: 'Node 3'},
-			{id: '4', label: 'Node 4'},
-			{id: '5', label: 'Node 5'}
-		]);
-		// create an array with edges
-		edges = new vis.DataSet();
-		edges.subscribe('*', function () {
-		//$('#edges').html(toJSON(edges.get()));
-		});
-		edges.add([
-			{id: '1', from: '1', to: '2'},
-			{id: '11', from: '2', to: '1'},
-			{id: '2', from: '1', to: '3'},
-			{id: '3', from: '2', to: '4'},
-			{id: '4', from: '2', to: '5'}
-		]);
-	  // create a network
-		  //var container = document.getElementById('mynetwork');
-		var network = new vis.Network(
-			network_div, {nodes: nodes, edges: edges}, options);
-		network.editMode = true // https://github.com/almende/vis/issues/605#issue-55793606
-		network._createManipulatorBar()
-		network.on('select', function(params) {
-			console.log("params.nodes: " + params.nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
-			rename_button.disabled = (params.nodes.length != 1)
-			connect_button.disabled = (params.nodes.length < 2)
-		})
-
-			//TODO: remove these functions once model is connected
-			function validateName(name) {
-				return name
+	function control(func) {
+		controller[func](input1.value)
+	}
+	
+	function deleteButtonClicked() {
+		// fired when user (rather than graph) initiates removal
+		// Do the same as when graph initiates removal
+		options.onDelete(network.getSelection() , function() {})
+	}
+	
+	//fired when graph (rather than user) initiates removal. 
+	// Promote the command to the model. Actualy graph will be
+	// pruned on model update event.
+	options.onDelete = function(deleted, cb) {
+		controller.compound(function() {
+			for (var key in deleted.nodes) {
+				controller.deleteNode(deleted.nodes[key])
 			}
-		
-		function validateUserInput(nextOp) {
-		var validated = validateName(input1.value.trim())
-			return nextOp(validated)
-		}
+			for (var key in deleted.edges) {
+				var e = deleted.edges[key].split(controller.separator)
+				console.log('have to delete ' + deleted.edges[key] + " also ")
+				controller.disconnectNodes(e[0], e[1])
+			}
+			return cb([]) // cancel delete -- do in on model update
+		})
+	}
 
-		function deleteButtonClicked() {
-			// options.onDelete is called when user edits graph by del key.
-			//It is not called when we manipulate nodes/edges programmatically.
-			// We therefore call this callback directly.
-			options.onDelete(network.getSelection() , function() {})
-			
-			//The problem is that some events will come from remote host
-			// and we ought to break the loops so that remote event -> local graph delete  -> model.delete -> local graph delete -> ...
-		}
+	// create an array with nodes
+	nodes = new vis.DataSet();
+	edges = new vis.DataSet();
+  // create a network
+	  //var container = document.getElementById('mynetwork');
+	var network = new vis.Network(
+		network_div, {nodes: nodes, edges: edges}, options);
+	network.editMode = true // https://github.com/almende/vis/issues/605#issue-55793606
+	network._createManipulatorBar()
+	network.on('select', function(params) {
+		console.log("params.nodes: " + params.nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
+		rename_button.disabled = (params.nodes.length != 1)
+		connect_button.disabled = (params.nodes.length < 2)
+		disconnect_button.disabled = (params.nodes.length < 2)
+	})
+	
+	function renameButtonClicked() {
+		var selected = network.getSelection().nodes
+		//nodes.update({id: selected[0], label:validName})
+		controller.renameNode(selected[0], input1.value)
+	}
+	
+	function visAdd(validName) {
+		var added = nodes.add({id: validName, label:validName})
+	}
+	
+	//var edgeId = 100
+	//function visConnect(nodeA, nodeB) {
+		//edges.add({id: "e" + edgeId++, from: nodeA, to: nodeB}) //}
+	
+	function visConnect(nodeA, nodeB) {
+		//edges.add({id: "e" + edgeId++, from: ids[i-1], to: ids[i]})
+		console.log('connecting ' + nodeA + "-" + nodeB)
+		if (validEdgeDir(nodeA, nodeB)) 
+			edges.add({id: edgeId(nodeA, nodeB), from: nodeA, to: nodeB})
+	}
+	function addnodeButtonClicked() {
+		var connectTo = network.getSelection().nodes
+		controller.compound(function() {
+			controller.createNode(input1.value)
+			for (var key in connectTo)
+				controller.connect(connectTo[key], input1.value)
+		})
+	}
+	function connectButtonClicked(plusAdded) {
+		var ids = network.getSelection().nodes.concat(plusAdded)
+		console.log("joining = " + ids.join(','))
 		
-		function renameButtonClicked(validName) {
-			var selected = network.getSelection().nodes
-			if (selected.length != 1) throw new Error("exactly one node must be selected. You have selected " + selected.length + ": " + ValUtils.dictToStr(selected))
-			nodes.update({id: selected[0], label:validName})
-		}
-		
-		function addnodeButtonClicked(validName) {
-			var added = nodes.add({id: validName, label:validName})
-			connectButtonClicked(added)
-		}
-		
-		var edgeId = 100
-		function connectButtonClicked(plusAdded) {
-			var ids = network.getSelection().nodes.concat(plusAdded)
-			console.log("joining = " + ids.join(','))
-			//todo: edit model
+		/*for (var i = 1 ; i != ids.length ; i++)
+			visConnect(ids[i-1], ids[i])
+		if (ids.length > 2) visConnect(ids[ids.length-1], ids[0])*/
+		controller.compound(function() {
 			for (var i = 1 ; i != ids.length ; i++)
-				edges.add({id: "e" + edgeId++, from: ids[i-1], to: ids[i]})
-			if (ids.length > 2)
-			edges.add({id: "e" + edgeId++, from: ids[ids.length-1], to: ids[0]})
+				controller.connect(ids[i-1], ids[i])
+			if (ids.length > 2) controller.connect(ids[ids.length-1], ids[0])
+		})
+	}
+	
+	function disconnectButtonClicked() {
+		var ids = network.getSelection().edges
+		var nodes = network.getSelection().nodes
+		for (var i in nodes) for (var j in nodes) {
+			var edge = edgeId(nodes[i], nodes[j])
+			if (edges.get(edge) != null && validEdgeDir(nodes[i], nodes[j]))
+				ids.push(edge)
+		}
+		//console.log("breaking " + ids.join('|'))
+		options.onDelete({edges:ids} , function() {})
+	}
+
+	// called by controller.js
+	function onMapValueChanged(evt) {
+		if (evt.newValue == null) {
+			//console.log("remote event: deleted " + evt.property)
+			nodes.remove(evt.property)
+		}
+		else if (evt.oldValue == null) {
+			//console.log("remote event: created " + evt.property)
+			var added = visAdd(evt.property)
+			//connectButtonClicked([added])
+		}
 			
+		else {
+			//console.log("remote event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)
+			var src = evt.property
+			var listWas = evt.oldValue.split(controller.separator)
+			var newList = evt.newValue.split(controller.separator)
+			newList.map(function(n) {
+				if (listWas.indexOf(n) == -1) {
+					console.log('connected a: ' + src + "-" + n)
+					visConnect(src, n)
+				}
+			})
+			listWas.map(function(w) {
+				if (newList.indexOf(w) == -1) {
+					console.log('disconnected ' + src + "-" + w)
+					edges.remove(edgeId(src, w))
+				}
+			});
 		}
 		
+	}
+	/*
+	function printAll() { 
+		var keys = controller.graph.keys()
+		for (i in keys) {
+			console.log(keys[i] + " => " + controller.graph.get(keys[i]))
+		}
+	}*/
+
+	function validEdgeDir(a, b) { return a < b }
+	
+	function edgeId(a,b) {
+		return (validEdgeDir(a,b) ? [a,b] : [b,a]).join(controller.separator)
+	}
+	
+	function onFileLoaded() { 
+		var keys = controller.graph.keys()
+		//cy.startBatch() try {
+		for (var i in keys) {
+			var key = keys[i]
+			visAdd(key)
+			var associations = controller.listConnections(key)
+			for (var j in associations)
+				visConnect(key, associations[j])
+		}
+	}	
     </script>
 
-  
+</body>

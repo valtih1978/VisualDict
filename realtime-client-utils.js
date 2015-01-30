@@ -29,7 +29,7 @@ rtclient.getParams = function() {
       params[paramStr[0]] = unescape(paramStr[1]);
     }
   }
-  console.log("params = " + ValUtils.dictToStr(params));
+  console.log("params = " + Object.keys(params));
   return params;
 }
 
@@ -97,8 +97,8 @@ rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
 
 	var handleAuthResult = function(authResult) {
 		function log(title) {
-			console.log('auth '+title+' = ' + ValUtils.dictToStr(authResult))
-			console.log(' error status = ' + ValUtils.dictToStr(authResult.status))
+			console.log('auth '+title+' = ' + Object.keys(authResult))
+			console.log(' error status = ' + Object.keys(authResult.status))
 		}
 		if (authResult && !authResult.error) {
 			log("ok")
@@ -288,7 +288,7 @@ rtclient.RealtimeLoader.prototype.load = function() {
   // Creating the error callback.
   var authorizer = this.authorizer;
 
-	console.log("RT.load, rclient.params=" + ValUtils.dictToStr(rtclient.params) + "")
+	console.log("RT.load, rclient.params=" + Object.keys(rtclient.params) + "")
   // We have file IDs in the query parameters, so we will use them to load a file.
   if (fileId) {
       gapi.drive.realtime.load(fileId, this.onFileLoaded, this.initializeModel, this.handleErrors);
@@ -326,7 +326,7 @@ rtclient.RealtimeLoader.prototype.createNewFileAndRedirect = function() {
 	// Pick file automatically if one already exists
     gapi.client.drive.files.list({q:"mimeType = '"+mimeType()+"' and trashed=false"}).execute(function(resp) {
 		// if next page token -- fetch another page
-		console.log("already exist " + resp.items.length + " files, first file = " + ValUtils.dictToStr(resp.items[0]))
+		console.log("already exist " + resp.items.length + " files")
 		if (resp.items.length > 0) {
 			if (resp.items.length == 1) _this.redirectTo(resp.items[0].id);
 			else pick()
@@ -371,8 +371,8 @@ function pick() {
 		  //.setDeveloperKey(apiKey)
 		  //.addView(new google.picker.DocsUploadView())
 		  .setCallback(function(resp){
-				//console.log("picked " + ValUtils.dictToStr(resp))
-				//console.log("docs[0]" + ValUtils.dictToStr(resp.docs[0]))
+				//console.log("picked " + Object.keys(resp))
+				//console.log("docs[0]" + Object.keys(resp.docs[0]))
 				if (resp.action == 'picked') 
 					rtclient.loaderInst.redirectTo(resp.docs[0].id, true);
 			})
