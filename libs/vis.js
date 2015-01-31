@@ -32968,7 +32968,7 @@ return /******/ (function(modules) { // webpackBootstrap
   console.log('_createAddEdgeToolbar')
     // clear the toolbar
     this._clearManipulatorBar();
-    this._unselectAll(true);
+    //this._unselectAll(true);
     this.freezeSimulation = true;
 
     if (this.boundFunction) {
@@ -32977,7 +32977,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
     var locale = this.constants.locales[this.constants.locale];
 
-    this._unselectAll();
+    //this._unselectAll();
     this.forceAppendSelection = false;
     this.blockConnectingEdgeSelection = true;
 
@@ -33153,7 +33153,7 @@ return /******/ (function(modules) { // webpackBootstrap
    * @private
    */
   exports._handleConnect = function(pointer) {
-    if (this._getSelectedNodeCount() == 0) {
+//    if (this._getSelectedNodeCount() == 0) {
       var node = this._getNodeAt(pointer);
 		console.log('handle connect ' + node)
       if (node != null) {
@@ -33161,6 +33161,7 @@ return /******/ (function(modules) { // webpackBootstrap
           alert(this.constants.locales[this.constants.locale]['createEdgeError'])
         }
         else {
+			this._unselectAll(true);
           this._selectObject(node,false);
           var supportNodes = this.sectors['support']['nodes'];
 
@@ -33195,7 +33196,7 @@ return /******/ (function(modules) { // webpackBootstrap
           this.start();
         }
       }
-    }
+  //  }
   };
 
   exports._finishConnect = function(event) {
