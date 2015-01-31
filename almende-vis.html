@@ -49,6 +49,7 @@ recede the mouse too far away.
 				//console.log(e.target.textContent + " was clicked");
 				selectNode(e.target.textContent)
 				network.focusOnNode(e.target.textContent)
+				window.scrollTo(0,0)
 			}
 		});
 		function selectNode(id) {
@@ -61,6 +62,10 @@ recede the mouse too far away.
 				if (list[k].textContent == word) 
 					return list[k]
 		}
+		
+		/* 
+		// highlight selected words in list
+		var listSelected = []
 		function updateListSelection(justSelected) {
 			for (var k in listSelected) {
 				listSelected[k].style['font-size'] = "xx-small"
@@ -73,6 +78,17 @@ recede the mouse too far away.
 				li.style['font-size'] = "large"
 				li.style['font-weight'] = "bold"
 				listSelected.push(li)
+			}
+		}*/
+		function insertFirst(li) {
+			if (word_list.firstChild) word_list.insertBefore(li, word_list.firstChild);
+			else word_list.appendChild(li);
+		}
+		function updateListSelection(justSelected) {
+			for (k in justSelected) {
+				var li = getLI(justSelected[k])
+				word_list.removeChild(li)
+				insertFirst(li)
 			}
 		}
 
@@ -171,7 +187,6 @@ recede the mouse too far away.
 	network.editMode = true // https://github.com/almende/vis/issues/605#issue-55793606
 	network._createManipulatorBar()
 	
-	var listSelected = []
 	network.on('select', function(params) {
 		console.log("params.nodes: " + params.nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
 		rename_button.disabled = (params.nodes.length != 1)
@@ -195,8 +210,7 @@ recede the mouse too far away.
 		// add to list
 		var li = document.createElement("LI");
 		li.appendChild(document.createTextNode(validName));
-		if (word_list.firstChild) word_list.insertBefore(li, word_list.firstChild);
-		else word_list.appendChild(li);
+		insertFirst(li)
 	}
 	
 	//var edgeId = 100
