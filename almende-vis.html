@@ -116,6 +116,10 @@ recede the mouse too far away.
 					//console.log(down + ' = ' + (func ? 'defined' : 'undefined') + ", constants = " + ValUtils.dictToStr(network.constants.locales)) 
 				}
 				
+			} else if (ConnectMode_span.style.display != 'none') {
+				//console.log('another key pressed!') // need to stop conn mode immediately (it has side effects)
+				network._createManipulatorBar.call(network)
+				ConnectMode_span.style.display = 'none'
 			}
 		}, true);
 	})
