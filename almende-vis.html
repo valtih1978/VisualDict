@@ -28,7 +28,7 @@ recede the mouse too far away.
   </table >
   
   <table onmouseenter="addBarExpand('block')" onmouseleave="addBarExpand('none')" style="float: right">
-	<tr><td><input id="input1"/></td></tr>
+	<tr><td><input id="input1" onkeydown="if (event.keyCode == 13) addnodeButtonClicked()"/></td></tr>
 	<tr><td><button id="add_button" onclick="addnodeButtonClicked()" style="display:none">add node</button></td></tr>
 	<tr><td><button id="rename_button" onclick="renameButtonClicked()" disabled style="display:none">Rename</button></td></tr>
 	<tr><td><button id="delete_button" onclick="deleteButtonClicked()" style="display:none">Delete Selected</button></td></tr>
@@ -95,7 +95,9 @@ recede the mouse too far away.
   -->
 <script>
 	//
-	
+	window.onerror = function(errorMsg, url, lineNumber) {
+		alert("Error " + errorMsg + " in " + url + ", line " + lineNumber + ". Watch the developer console.");
+	};	
 	["keydown", "keyup"].map(function(evt) {
 		window.addEventListener(evt, function(event) {
 			// Bind to both command (for Mac) and control (for Win/Linux)
