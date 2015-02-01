@@ -127,7 +127,8 @@ function startRealtime() {
 		function append(title, dict) {
 			model.getRoot().set(title, model.createMap(dict));
 		}
-		append('configuration', {nodeIdentity:100, edgeIdntity:100, separator: ','})
+		append('configuration', {langs:{'default': 'blue'}
+								, separator: ','})
 		append('graph', {a:"b,c", b:"a", c:"a",m:""})
 	}
 	

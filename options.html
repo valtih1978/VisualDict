@@ -1,0 +1,79 @@
+ <html>
+ <head>
+   <title>Dictionary Options</title>
+   <h2>Option Editor</h2>
+   <meta http-equiv="X-UA-Compatible" content="IE=9">
+   <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
+   <script type="text/javascript" src="realtime-client-utils.js"></script>
+   <script>
+ 	
+	var configuration
+ 	// called by controller.js
+	function onFileLoaded(doc) {
+		configuration = controller.model.getRoot().get('configuration')
+		var keys = configuration.keys()
+		for (var k in keys) if (keys[k] != 'langs'){
+			textarea1.textContent += keys[k] + " = " + configuration.get(keys[k]) + "\n"
+		}
+		var langs = configuration.get('langs')
+		for (var k in langs) {
+			textarea1.textContent += k + ": " + langs[k] + "\n"
+		}
+		
+		textarea1.disabled = savebutton.disabled = false
+	}
+	
+	function onMapValueChanged(evt) {
+		//console.log("event = " + showAll(evt))
+		
+		// null => "" when created
+		// "something" => null when deleted
+		if (evt.newValue == null) console.log("remote event: deleted " + evt.property)
+		else if (evt.oldValue == null) console.log("remote event: created " + evt.property)
+		else console.log("remote event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)
+		
+	}
+	
+	function saveButtonClick() {
+		// Replaced \n ->, we shoud have JSON. Unortunately, 
+		// it fails
+		//alert(JSON.parse(textarea1.value.replace(/\n/g, ","))) 
+		
+		// let's parse manualy
+		var pairs = textarea1.value.split('\n') ; var json = {}
+		for (var k in pairs) if (pairs[k].indexOf(':') != -1) {
+			var pair = pairs[k].split(':').map(function(item) {
+				return item.trim()})
+			//console.log(pair[0] + "=>" + pair[1])
+			json[pair[0]] = pair[1]
+		}
+		configuration.set('langs', json)
+	}
+	</script>
+   <script type="text/javascript" src="controller.js"></script>
+ </head>
+ 
+ <!-- Start Realtime when the body has loaded. -->
+<body onLoad='startRealtime()'>
+ 
+   <button id="authorizeButton" disabled>You must authorize</button>
+   <button id="pick" onclick="pick()">Pick another file</button>
+   <!-- Undo and redo buttons. -->
+   <button id="undoButton" disabled>Undo</button>
+   <button id="redoButton" disabled>Redo</button>
+   <p>
+
+   <table style="float:left;margin:0px 10px 0px 0px;">
+		<tr><td><textarea disabled id="textarea1" rows=7 cols=50 align="right" ></textarea></td></tr>
+		<tr><td><button disabled id="savebutton" onclick="saveButtonClick()">Save</button> and <a href="/">Visit the dictionary</a></td></tr>
+	</table>
+   Leading and ending whitespaces are stripped 
+   in keys and values. <br>Editing separator has no effect. 
+   Normally you use = to separate key from values. Extraordinary 
+   form, like <code>en: red</code> and <code>ru: green</code> 
+   is used to link language with node colors.<br>
+   The options are just an example and have no effect in the 
+   dictinary.<br> We cannot give you defaults for the same reason.
+ <p>
+ </body>
+ </html>

@@ -14,7 +14,7 @@ recede the mouse too far away.
 
 <div id="network_div" style=""></div>
 
-<ul id="word_list" class="controls" style="float: left; width:40; height: 100; font-size: xx-small"></ul>
+<ul id="word_list" class="controls" style="float: left; width:50; height: 100; font-size: xx-small"></ul>
 
   <a href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a>
   <table onmouseenter="pickButton.style.display = 'block'" onmouseleave="pickButton.style.display = 'none'" style="float: right">
@@ -48,8 +48,14 @@ recede the mouse too far away.
 			if(e.target && e.target.nodeName == "LI") {
 				//console.log(e.target.textContent + " was clicked");
 				selectNode(e.target.textContent)
-				network.focusOnNode(e.target.textContent)
-				window.scrollTo(0,0)
+				network.focusOnNode(e.target.textContent, {
+					scale: 1, offset: {x:0,y:0},
+						animation: {
+							duration: 2500,
+							easingFunction: 'easeInOutQuad'
+						}
+				})
+				window.scrollTo(0,0) // browser jump. Useful for long lists
 			}
 		});
 		function selectNode(id) {
@@ -147,7 +153,14 @@ recede the mouse too far away.
 			console.log('onUpdate ' + JSON.stringify(edge))
 			controller.connect(edge.from, edge.to)
 			callback([]); // cancel update. Do it with model update
-		}
+		},
+		/*nodes: { // having only text obfuscates its location on the edges
+			shape: "text",
+			color: {
+				border: 'orange',
+				background: 'white',
+			}
+		}*/
 	};
 
 	function control(func) {

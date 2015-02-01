@@ -3,7 +3,6 @@
    <title>Google Drive Realtime quickstart</title>
    <meta http-equiv="X-UA-Compatible" content="IE=9">
    <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
-   <script type="text/javascript" src="valutils.js"></script>
    <script type="text/javascript" src="realtime-client-utils.js"></script>
    
    <script>
@@ -51,7 +50,7 @@
 	<input id="a_input" size="4"/><input id="b_input" size="4"/>
  	<button onclick="printAll()">Show all</button>
  	<p>
- 	<textarea id="textarea1" disabled rows=7 align="right" style="float:left;margin:0px 10px 0px 0px;"></textarea>
+ 	<textarea id="textarea1" disabled rows=7 cols=50 align="right" style="float:left;margin:0px 10px 0px 0px;"></textarea>
 	<script>
 	
 	function control(func) { 
@@ -64,31 +63,52 @@
 	</script>
 	
 	This is a project to replace <a href="https://translate.google.com">
-	google.translate phrasebook</a>
-	with decent editor, which represents related words graphically.
-	Here you can edit the graph using the buttons. I have 
-	<a href="javascript:redirect('almende-vis.html')">
-	started visual editor</a> based on Almende example 21 (see 
-	below). We need to autoexpand/collapse functionality on mouse 
+	google.translate phrasebook</a>	with decent editor, which 
+	allows to place related words closely next to each other.
+	Here you can edit the graph using the buttons yet <a href="javascript:redirect('almende-vis.html')"> 
+	visual editor was started</a> (based on Almende example 21, see 
+	below). I think that it has reached usable stage. Yet, we need 
+	to add dynamic autoexpand/collapse functionality on mouse 
 	hover, the way <a href="http://arborjs.org"> arborjs.org</a> 
 	and <a href="http://maxdemarzi.com/2013/05/29/visualizing-the-news-with-vivagraph-js/">
-	VivaGraph (example down)</a> do.
+	VivaGraph (example down)</a> propose, as well as language
+	differentiation (node color?). Currently, related words are
+	enumerated through comma in the DB (comma  is forbidden in 
+	the words, therefore, though this may be wrong idea if we 
+	are building a phrasebook rather than ordinary dictionary). 
+	Nevertheless, so far, I think that words could
+	be stored prefixed with language, like en: and et: making
+	semicolon forbidden as well. Anyway, I have started the 
+	<a href="/options.html">options</a> page.
+	
+	Might 
+	be some integration with google translate is also required.
+	Supporting import of google-exported prasebook is required
+	for sure.
+	
 		<p>
-	Unlike most graph models, current graph model does not use 
-	node/edge ids. Nodes are identified with labels. This 
-	complicates renaming and might inflate DB size. Yet, <a href="http://stackoverflow.com/questions/28196581/locking-in-google-realtime-db">
+	Unlike most graph models, current graph model avoids 
+	node/edge ids. Nodes are identified with words/labels. This 
+	complicates renaming and might inflate DB size. Yet, 
+	<a href="http://stackoverflow.com/questions/28196581/locking-in-google-realtime-db">
 	not all identifiers are shorter than natural words.</a>
 		<p>
-		Thanks to Google Drive Realtime API, you can 
-	<a target="_blank" href="#">created word nets collaboratively.</a> 
-	This might be an overkill and not very reliable (can be
-	corrupted due to concurrency, see link above) but enableds 
-	undo/redo for free.
+		Thanks to Google Drive Realtime API (<a href="http://valjok.blogspot.com/2015/01/cloud-storage.html">
+		how I have picked it</a>), you can 
+	<a target="_blank" href="#">produce word nets collaboratively.</a> 
+	Though, this might be an overkill and is not reliable at all 
+	(can be corrupted due to concurrency, see link above) but 
+	unavoidable with Google RT and enableds undo/redo for free. 
+	The database is stored in VisualDict file your google drive.
+	You may rename it or copy it for backup and switch files 
+	(trashed files are not visible for picking).
 	<hr>
 	Here is mine analysis of graph-drawing engines.<p>
 		<li>
-	<a href="javascript:redirect('cytoscape.html')">Cytoscape</a> loads 
-	realtime data but fails to make connections. Cytoscape seems good visualizer but unsatisfactory editor.</li><li>
+	<a href="javascript:redirect('cytoscape.html')">Cytoscape</a> 
+	loads realtime data but fails to make connections. Cytoscape 
+	seems good visualizer (now, I think it is not) and can layout
+	new nodes but it is unsatisfactory editor.</li><li>
 	<a href="javascript:redirect('graph-creator.html')">Graph Creator</a> 
 	Thoug it does support "make connections" facility, it does not support automatic layout and
 	Integration with Realtime Model was not even started.</li>
@@ -111,7 +131,7 @@
 			Springy</a> example seems the thing that we are lookig for. It howerver 
 			drwas arrows (which might be confusing) and seems too dynamic 
 			(use too much CPU resources). But more static Cytoscape is hardly a solution
-			because its layout is too dumb. 
+			because its layout is too dumb.
 	</li>
 	<li>
 	<a href="javascript:redirect('almende-vis.html')">
