@@ -59,8 +59,13 @@ recede the mouse too far away.
 			}
 		});
 		function selectNode(id) {
-			network.selectNodes([id]) // select in graph
-			updateListSelection([id])
+			console.log(window.event)
+			var selected = (shiftPressed) 
+				? network.getSelection().nodes : []
+			selected.push(id)
+			network.selectNodes(selected) // select in graph
+			//updateListSelection([id])
+			onselect(selected)
 		}
 		function getLI(word) {
 			var list = word_list.querySelectorAll('li');
@@ -118,12 +123,17 @@ recede the mouse too far away.
 <script>
 	//
 	window.onerror = function(errorMsg, url, lineNumber) {
-		alert("Error " + errorMsg + " in " + url + ", line " + lineNumber + ". Watch the developer console.");
-	};	
+		alert("Error " + errorMsg + " in " + url + ", line " + lineNumber + ". Watch the developer console and propably reload the page.");
+	};
+	
+	var shiftPressed = undefined ; 
+	
 	["keydown", "keyup"].map(function(evt) {
 		window.addEventListener(evt, function(event) {
 			// Bind to both command (for Mac) and control (for Win/Linux)
-			if ((event.keyCode == 17)) {
+			shiftPressed = event.shiftKey
+			console.log(shiftPressed)
+			if (event.keyCode == 17) {
 				var down = event.type == 'keydown'
 				var newDisplay = down ? 'block' : 'none'
 				if (ConnectMode_span.style.display != newDisplay) {
@@ -200,15 +210,16 @@ recede the mouse too far away.
 	network.editMode = true // https://github.com/almende/vis/issues/605#issue-55793606
 	network._createManipulatorBar()
 	
-	network.on('select', function(params) {
-		console.log("params.nodes: " + params.nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
-		rename_button.disabled = (params.nodes.length != 1)
-		connect_button.disabled = (params.nodes.length < 2)
-		disconnect_button.disabled = (params.nodes.length < 1)
+	function onselect(nodes) {
+		console.log("params.nodes: " + nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
+		rename_button.disabled = (nodes.length != 1)
+		connect_button.disabled = (nodes.length < 2)
+		disconnect_button.disabled = (nodes.length < 1)
 		
 		// select item in the list
-		updateListSelection(params.nodes)
-	})
+		updateListSelection(nodes)
+	}
+	network.on('select', function(params) {onselect(params.nodes)})
 	
 	function renameButtonClicked() {
 		var selected = network.getSelection().nodes
@@ -232,7 +243,7 @@ recede the mouse too far away.
 	
 	function visConnect(nodeA, nodeB) {
 		//edges.add({id: "e" + edgeId++, from: ids[i-1], to: ids[i]})
-		console.log('connecting ' + nodeA + "-" + nodeB)
+		//console.log('connecting ' + nodeA + "-" + nodeB)
 		if (validEdgeDir(nodeA, nodeB)) 
 			edges.add({id: edgeId(nodeA, nodeB), from: nodeA, to: nodeB})
 	}
