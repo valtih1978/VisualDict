@@ -32,6 +32,7 @@ recede the mouse too far away.
 	<tr><td><button id="add_button" onclick="addnodeButtonClicked()" style="display:none">add node</button></td></tr>
 	<tr><td><button id="rename_button" onclick="renameButtonClicked()" disabled style="display:none">Rename</button></td></tr>
 	<tr><td><button id="delete_button" onclick="deleteButtonClicked()" style="display:none">Delete Selected</button></td></tr>
+	<tr><td><button id="flip_button" onclick="flipButtonClicked()" disabled style="display:none">Flip Selected</button></td></tr>
 </table>
   
   <table onmouseenter="disconnect_button.style.display = 'block'" onmouseleave="disconnect_button.style.display = 'none'" style="float: right">
@@ -42,6 +43,7 @@ recede the mouse too far away.
 		function addBarExpand(visibility)  {
 			add_button.style.display = visibility
 			delete_button.style.display = visibility
+			flip_button.style.display = visibility
 			rename_button.style.display = visibility
 		}
 		word_list.addEventListener("click", function(e) {
@@ -212,8 +214,9 @@ recede the mouse too far away.
 	
 	function onselect(nodes) {
 		console.log("params.nodes: " + nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
-		rename_button.disabled = (nodes.length != 1)
+		delete_button.disabled = rename_button.disabled = (nodes.length != 1)
 		connect_button.disabled = (nodes.length < 2)
+		flip_button.disabled = (nodes.length != 2)
 		disconnect_button.disabled = (nodes.length < 1)
 		
 		// select item in the list
@@ -225,6 +228,18 @@ recede the mouse too far away.
 		var selected = network.getSelection().nodes
 		//nodes.update({id: selected[0], label:validName})
 		controller.renameNode(selected[0], input1.value)
+	}
+	
+	function flipButtonClicked() {
+		var selected = network.getSelection().nodes
+		var name1 = selected[0] ; var name2 = selected[1]
+		//nodes.update({id: selected[0], label:validName})
+		var temp = "flipping_temp 1bf4e67deadad20cc14d"
+		controller.compound(function() {
+			controller.renameNode(name1, temp)
+			controller.renameNode(name2, name1)
+			controller.renameNode(temp, name2)
+		})
 	}
 	
 	function visAdd(validName) {
