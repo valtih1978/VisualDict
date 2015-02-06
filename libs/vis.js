@@ -33374,6 +33374,7 @@ return /******/ (function(modules) { // webpackBootstrap
    * @private
    */
   exports._deleteSelected = function() {
+	if (add_button.style.display == 'block') return // we are editing text
     if (!this._selectionIsEmpty() && this.editMode == true) {
       if (!this._clusterInSelection()) {
         var selectedNodes = this.getSelectedNodes();
