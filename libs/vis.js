@@ -15781,6 +15781,7 @@ return /******/ (function(modules) { // webpackBootstrap
         this.requiresTimeout = true;
       }
     }
+	//this.requiresTimeout = true // draw in the background
   }
 
 
@@ -17666,7 +17667,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
     // handle the keyboad movement
     this._handleNavigation();
-
     // check if the physics have settled
     if (this.moving == true) {
       var startTime = Date.now();

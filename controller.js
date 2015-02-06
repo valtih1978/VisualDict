@@ -141,7 +141,9 @@ function startRealtime() {
 		append('graph', {a:"b,c", b:"a", c:"a",m:""})
 	}
 	
+	var loaded = false
 	function _onFileLoaded(doc) {
+		if (loaded) return ; loaded = true // re-load happens on token refresh
 		controller = new Controller()
 		controller.model = doc.getModel() ; controller.separator = controller.model.getRoot().get('configuration').get('separator')
 		controller.graph = controller.model.getRoot().get('graph');

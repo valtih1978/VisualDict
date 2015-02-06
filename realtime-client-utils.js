@@ -115,7 +115,7 @@ rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
   function auth(access) { return "https://www.googleapis.com/auth/drive." + access }
 
   function authorize(nopopup) {
-	console.log('authorize '  + nopopup)
+	console.log('authorizing '  + nopopup)
     gapi.auth.authorize({
       client_id: clientId,
       scope: [
@@ -132,6 +132,8 @@ rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
 	}
   
   authorize(true)
+  
+  setInterval(function() {authorize(true)}, 1800000); // refresh interval 1800000 = 30 min
 }
 
 
