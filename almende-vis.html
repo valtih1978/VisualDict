@@ -258,13 +258,7 @@ recede the mouse too far away.
 		insertFirst(li)
 	}
 	
-	//var edgeId = 100
-	//function visConnect(nodeA, nodeB) {
-		//edges.add({id: "e" + edgeId++, from: nodeA, to: nodeB}) //}
-	
 	function visConnect(nodeA, nodeB) {
-		//edges.add({id: "e" + edgeId++, from: ids[i-1], to: ids[i]})
-		//console.log('connecting ' + nodeA + "-" + nodeB)
 		if (validEdgeDir(nodeA, nodeB)) 
 			edges.add({id: edgeId(nodeA, nodeB), from: nodeA, to: nodeB})
 	}

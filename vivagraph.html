@@ -1,96 +1,376 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
-"http://www.w3.org/TR/html4/strict.dtd">
-<html>
-<head>
-  <title>Google Drive Realtime quickstart</title>
-  <meta http-equiv="X-UA-Compatible" content="IE=9">
+<!--TODO: 
+1. show/hide on hover. The must be a hover option to 
+make object visible/hidden. Hidden objects disappear when we 
+recede the mouse too far away.
+2. List of words for search.
+
+
+-->
+<body onLoad='startRealtime()'>
   <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
+  <script src="libs/vis.js"></script>
   <script type="text/javascript" src="realtime-client-utils.js"></script>
   <script type="text/javascript" src="controller.js"></script>
-</head>
 
-<!-- Start Realtime when the body has loaded. -->
-<body onLoad='startRealtime()'>
-
-  <button id="authorizeButton" disabled>You must authorize</button>
-  <button id="pick" onclick="pick()">Pick another file</button>
-  <!-- Undo and redo buttons. -->
-  <button id="undoButton" disabled>Undo</button>
-  <button id="redoButton" disabled>Redo</button>
-  04. Listen to mouse events. Vivagraph SVG tutorial.
-<p>
-
-    <!--
-    This example uses jQuery, but it's only for convenience of listenting
-    to DOM events. The jQuery can be replaced with your favorite library.
-     -->
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
     <script src="https://rawgithub.com/anvaka/VivaGraphJS/master/dist/vivagraph.js" charset="utf-8"></script>    
-    <script type="text/javascript">
-	function printAll() {
-		var keys = graph.keys()
-		for (i in keys) {
-			console.log(keys[i] + " => " + graph.get(keys[i]))
+
+<ul id="word_list" class="controls" style="float: left; width:50; height: 100; font-size: xx-small"></ul>
+
+  <a href="https://github.com/anvaka/VivaGraphJS">VivaGraph</a>
+  <table onmouseenter="pickButton.style.display = 'block'" onmouseleave="pickButton.style.display = 'none'" style="float: right">
+	  <tr><td><button id="authorizeButton" disabled>You must authorize</button></td></tr>
+	  <tr><td><button id="pickButton" onclick="pick()" style="display:none">Pick another file</button></td></tr>
+  </table>
+  <!-- Undo and redo buttons. -->
+  <table onmouseenter="redoButton.style.display = 'block'" onmouseleave="redoButton.style.display = 'none'" style="float: right">
+	<tr><td><button id="undoButton" disabled>Undo</button></td></tr>
+	<tr><td><button id="redoButton" style="display:none" disabled>Redo</button></td></tr>
+  </table >
+  
+  <table onmouseenter="addBarExpand('block')" onmouseleave="addBarExpand('none')" style="float: right">
+	<tr><td><input id="input1" onkeydown="if (event.keyCode == 13) addnodeButtonClicked()"/></td></tr>
+	<tr><td><button id="add_button" onclick="addnodeButtonClicked()" style="display:none">add node</button></td></tr>
+	<tr><td><button id="rename_button" onclick="renameButtonClicked()" disabled style="display:none">Rename</button></td></tr>
+	<tr><td><button id="delete_button" onclick="deleteButtonClicked()" style="display:none">Delete Selected</button></td></tr>
+	<tr><td><button id="flip_button" onclick="flipButtonClicked()" disabled style="display:none">Flip Selected</button></td></tr>
+</table>
+  
+  <table onmouseenter="disconnect_button.style.display = 'block'" onmouseleave="disconnect_button.style.display = 'none'" style="float: right">
+	<tr><td><button id="connect_button" onclick="connectButtonClicked([])" disabled>connect</button></td></tr>
+	<tr><td><button id="disconnect_button" onclick="disconnectButtonClicked()" disabled style="display:none">break</button></td></tr>
+	<script>
+	
+		function addBarExpand(visibility)  {
+			add_button.style.display = visibility
+			delete_button.style.display = visibility
+			flip_button.style.display = visibility
+			rename_button.style.display = visibility
+		}
+		word_list.addEventListener("click", function(e) {
+			if(e.target && e.target.nodeName == "LI") {
+				//console.log(e.target.textContent + " was clicked");
+				selectNode(e.target.textContent)
+				network.focusOnNode(e.target.textContent, {
+					scale: 1, offset: {x:0,y:0},
+						animation: {
+							duration: 2500,
+							easingFunction: 'easeInOutQuad'
+						}
+				})
+				window.scrollTo(0,0) // browser jump. Useful for long lists
+			}
+		});
+		function selectNode(id) {
+			console.log(window.event)
+			var selected = (shiftPressed) 
+				? network.getSelection().nodes : []
+			selected.push(id)
+			network.selectNodes(selected) // select in graph
+			//updateListSelection([id])
+			onselect(selected)
+		}
+		function getLI(word) {
+			var list = word_list.querySelectorAll('li');
+			for (var k in list)
+				if (list[k].textContent == word) 
+					return list[k]
+		}
+		
+		/* 
+		// highlight selected words in list
+		var listSelected = []
+		function updateListSelection(justSelected) {
+			for (var k in listSelected) {
+				listSelected[k].style['font-size'] = "xx-small"
+				listSelected[k].style['font-weight'] = "normal"
+			}
+			listSelected = []
+			
+			for (k in justSelected) {
+				var li = getLI(justSelected[k]) 
+				li.style['font-size'] = "large"
+				li.style['font-weight'] = "bold"
+				listSelected.push(li)
+			}
+		}*/
+		function insertFirst(li) {
+			if (word_list.firstChild) word_list.insertBefore(li, word_list.firstChild);
+			else word_list.appendChild(li);
+		}
+		function updateListSelection(justSelected) {
+			for (k in justSelected) {
+				var li = getLI(justSelected[k])
+				word_list.removeChild(li)
+				insertFirst(li)
+			}
+		}
+
+	</script>
+  </table>
+  
+  
+  <span id="ConnectMode_span" style="display:none">connect mode</span>
+	<style type="text/css">
+	body {font-family:verdana}
+	.network-manipulationLabel {display: none}
+	a, span, table, button, input, .controls { position: relative; left: 0; top: 0; margin: 0; padding: 0;}
+	canvas { position: absolute; left: 0; top: 0; margin: 0;
+		z-order: -1;
+		padding: 0; width: 100%; height: 100%;}
+	</style>
+
+
+  <!--
+  <script src="http://almende.github.io/vis/dist/vis.js"></script>
+  -->
+<script>
+	//
+	//
+/*	window.onerror = function(errorMsg, url, lineNumber) {
+		alert("Error " + errorMsg + " in " + url + ", line " + lineNumber + ". Watch the developer console.");
+	};
+*/	
+	var shiftPressed = undefined ; 
+	
+	["keydown", "keyup"].map(function(evt) {
+		window.addEventListener(evt, function(event) {
+			// Bind to both command (for Mac) and control (for Win/Linux)
+			shiftPressed = event.shiftKey
+			if (event.keyCode == 17) {
+				var down = event.type == 'keydown'
+				var newDisplay = down ? 'block' : 'none'
+				if (ConnectMode_span.style.display != newDisplay) {
+					ConnectMode_span.style.display = newDisplay
+					var element = down ? 'addEdgeSpan' : 'backSpan'
+					if (network.manipulationDOM[element])
+						network.manipulationDOM[element].onclick()
+					else
+						console.log('element ' + element + " undefined")
+					//console.log(element + ' = ' + (func ? 'defined' : 'undefined') + ", constants = " + ValUtils.dictToStr(network.constants.locales)) 
+					//var func = network[down ? '_createAddEdgeToolbar' : '_createManipulatorBar']
+					//console.log(down + ' = ' + (func ? 'defined' : 'undefined') + ", constants = " + ValUtils.dictToStr(network.constants.locales)) 
+				}
+				
+			} else if (ConnectMode_span.style.display != 'none') {
+				//console.log('another key pressed!') // need to stop conn mode immediately (it has side effects)
+				network._createManipulatorBar.call(network)
+				ConnectMode_span.style.display = 'none'
+			}
+		}, true);
+	})
+	
+
+	var options = {
+		dataManipulation: {enabled: true, initiallyVisible:false},
+		onConnect: function (edge, callback) {
+			console.log('onUpdate ' + JSON.stringify(edge))
+			controller.connect(edge.from, edge.to)
+			callback([]); // cancel update. Do it with model update
+		},
+		/*nodes: { // having only text obfuscates its location on the edges
+			shape: "text",
+			color: {
+				border: 'orange',
+				background: 'white',
+			}
+		}*/
+	};
+
+	function control(func) {
+		controller[func](input1.value)
+	}
+	
+	function deleteButtonClicked() {
+		// fired when user (rather than graph) initiates removal
+		// Do the same as when graph initiates removal
+		options.onDelete(network.getSelection() , function() {})
+	}
+	
+	//fired when graph (rather than user) initiates removal. 
+	// Promote the command to the model. Actualy graph will be
+	// pruned on model update event.
+	options.onDelete = function(deleted, cb) {
+		controller.compound(function() {
+			for (var key in deleted.edges) {
+				var e = deleted.edges[key].split(controller.separator)
+				console.log('have to delete ' + deleted.edges[key] + " also ")
+				controller.disconnectNodes(e[0], e[1])
+			}
+			for (var key in deleted.nodes) {
+				console.log('deleting ' + deleted.nodes[key])
+				controller.deleteNode(deleted.nodes[key])
+			}
+			return cb([]) // cancel delete -- do in on model update
+		})
+	}
+
+	var graph = Viva.Graph.generator().path(1); // TODO: how do I remove this initial bastard?
+	var renderer = Viva.Graph.View.renderer(graph, {
+		layout : Viva.Graph.Layout.forceDirected(graph, {
+			springLength : 150,
+			springCoeff : 0.000008,
+			dragCoeff : 0.02,
+			gravity : -1.2
+			}),
+		graphics   : Viva.Graph.View.webglGraphics()
+	    }).run();
+	// I'm not quite happy with how events are currently implemented
+	// in the library and I'm planning to refactor it. But for the
+	// time beings this is how you track webgl-based input events:
+	/*var events = Viva.Graph.webglInputEvents(graphics, graph);
+	events.mouseEnter(function (node) {
+	    console.log('Mouse entered node: ' + node.id);
+	}).mouseLeave(function (node) {
+	    console.log('Mouse left node: ' + node.id);
+	}).dblClick(function (node) {
+	    console.log('Double click on node: ' + node.id);
+	}).click(function (node) {
+	    console.log('Single click on node: ' + node.id);
+	});*/
+	
+	
+	function onselect(nodes) {
+		console.log("params.nodes: " + nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
+		delete_button.disabled = rename_button.disabled = (nodes.length != 1)
+		connect_button.disabled = (nodes.length < 2)
+		flip_button.disabled = (nodes.length != 2)
+		disconnect_button.disabled = (nodes.length < 1)
+		
+		// select item in the list
+		updateListSelection(nodes)
+	}
+	//network.on('select', function(params) {onselect(params.nodes)})
+	
+	function renameButtonClicked() {
+		var selected = network.getSelection().nodes
+		//nodes.update({id: selected[0], label:validName})
+		controller.renameNode(selected[0], input1.value)
+	}
+	
+	function flipButtonClicked() {
+		var selected = network.getSelection().nodes
+		var name1 = selected[0] ; var name2 = selected[1]
+		//nodes.update({id: selected[0], label:validName})
+		var temp = "flipping_temp 1bf4e67deadad20cc14d"
+		controller.compound(function() {
+			controller.renameNode(name1, temp)
+			controller.renameNode(name2, name1)
+			controller.renameNode(temp, name2)
+		})
+	}
+	
+	function visAdd(validName) {
+		//add to graph
+		graph.addNode(validName);
+/*		var added = nodes.add({id: validName, label:validName})
+
+		if (word_list.firstChild) {
+			selected = network.nodes[word_list.firstChild.textContent] // nodes[id] fail for some reason
+			var props = {x: selected.x, y: selected.y, allowedToMoveX: true, allowedToMoveY: true}
+			network.nodes[validName].setProperties(props)
+		}
+
+		// add to list
+		var li = document.createElement("LI");
+		li.appendChild(document.createTextNode(validName));
+		insertFirst(li)*/
+	}
+	
+	function visConnect(nodeA, nodeB) {
+		if (validEdgeDir(nodeA, nodeB)) 
+			//edges.add({id: edgeId(nodeA, nodeB), from: nodeA, to: nodeB})
+			 graph.addLink(nodeA, nodeB);
+	}
+
+	function addnodeButtonClicked() {
+		var connectTo = network.getSelection().nodes
+		controller.compound(function() {
+			willingToSelect = controller.createNode(input1.value)
+			for (var key in connectTo)
+				controller.connect(connectTo[key], input1.value)
+		})
+	}
+	function connectButtonClicked(plusAdded) {
+		var ids = network.getSelection().nodes.concat(plusAdded)
+		console.log("joining = " + ids.join(','))
+		
+		/*for (var i = 1 ; i != ids.length ; i++)
+			visConnect(ids[i-1], ids[i])
+		if (ids.length > 2) visConnect(ids[ids.length-1], ids[0])*/
+		controller.compound(function() {
+			for (var i = 1 ; i != ids.length ; i++)
+				controller.connect(ids[i-1], ids[i])
+			if (ids.length > 2) controller.connect(ids[ids.length-1], ids[0])
+		})
+	}
+	
+	function disconnectButtonClicked() {
+		var ids = network.getSelection().edges
+		var nodes = network.getSelection().nodes
+		for (var i in nodes) for (var j in nodes) {
+			var edge = edgeId(nodes[i], nodes[j])
+			if (edges.get(edge) != null && validEdgeDir(nodes[i], nodes[j]))
+				ids.push(edge)
+		}
+		//console.log("breaking " + ids.join('|'))
+		options.onDelete({edges:ids} , function() {})
+	}
+
+	// called by controller.js
+	function onMapValueChanged(evt) {
+		if (evt.newValue == null) {
+			//console.log("remote event: deleted " + evt.property)
+			nodes.remove(evt.property)
+			word_list.removeChild(getLI(evt.property))
+			
+		}
+		else if (evt.oldValue == null) {
+			//console.log("remote event: created " + evt.property)
+			
+			visAdd(evt.property)
+			
+			if (willingToSelect == evt.property) selectNode(willingToSelect)
+			//connectButtonClicked([added])
+		}
+			
+		else {
+			//console.log("remote event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)
+			var src = evt.property
+			var listWas = evt.oldValue.split(controller.separator)
+			var newList = evt.newValue.split(controller.separator)
+			newList.map(function(n) {
+				if (listWas.indexOf(n) == -1) {
+					console.log('connected a: ' + src + "-" + n)
+					visConnect(src, n)
+				}
+			})
+			listWas.map(function(w) {
+				if (newList.indexOf(w) == -1) {
+					console.log('disconnected ' + src + "-" + w)
+					edges.remove(edgeId(src, w))
+				}
+			});
 		}
 		
 	}
-	function onFileLoaded(dummydoc) { 
-// As in previous steps, we create a basic structure of a graph:
-            var graph = Viva.Graph.graph();
-            graph.addNode('anvaka', '91bad8ceeec43ae303790f8fe238164b');
-            graph.addNode('indexzero', 'd43e8ea63b61e7669ded5b9d3c2e980f');
-            graph.addLink('anvaka', 'indexzero');
-            var graphics = Viva.Graph.View.svgGraphics(),
-                nodeSize = 24,
-                // we use this method to highlight all realted links
-                // when user hovers mouse over a node:
-                highlightRelatedNodes = function(nodeId, isOn) {
-                   // just enumerate all realted nodes and update link color:
-                   graph.forEachLinkedNode(nodeId, function(node, link){
-                       var linkUI = graphics.getLinkUI(link.id);
-                       if (linkUI) {
-                           // linkUI is a UI object created by graphics below
-                           linkUI.attr('stroke', isOn ? 'red' : 'gray');
-                       }
-                   });
-                };
-            // Since we are using SVG we can easily subscribe to any supported
-            // events (http://www.w3.org/TR/SVG/interact.html#SVGEvents ),
-            // including mouse events:
-            graphics.node(function(node) {
-                var ui = Viva.Graph.svg('image')
-                     .attr('width', nodeSize)
-                     .attr('height', nodeSize)
-                     .link('https://secure.gravatar.com/avatar/' + node.data);
-					 
-                $(ui).hover(function() { // mouse over
-                    highlightRelatedNodes(node.id, true);
-                }, function() { // mouse out
-                    highlightRelatedNodes(node.id, false);
-                });
-                return ui;
-            }).placeNode(function(nodeUI, pos) {
-                nodeUI.attr('x', pos.x - nodeSize / 2).attr('y', pos.y - nodeSize / 2);
-            });
-            graphics.link(function(link){
-                return Viva.Graph.svg('path')
-                              .attr('stroke', 'gray');
-            }).placeLink(function(linkUI, fromPos, toPos) {
-                var data = 'M' + fromPos.x + ',' + fromPos.y +
-                           'L' + toPos.x + ',' + toPos.y;
-                linkUI.attr("d", data);
-            })
-            // Finally render the graph with our customized graphics object:
-            var renderer = Viva.Graph.View.renderer(graph, {
-                    graphics : graphics
-                });
-            renderer.run();
-        }
+
+	function validEdgeDir(a, b) { return a < b }
+	
+	function edgeId(a,b) {
+		return (validEdgeDir(a,b) ? [a,b] : [b,a]).join(controller.separator)
+	}
+	
+	function onFileLoaded() { 
+		var keys = controller.graph.keys()
+		for (var i in keys) {
+			var key = keys[i]
+			visAdd(key)
+			var associations = controller.listConnections(key)
+			for (var j in associations)
+				visConnect(key, associations[j])
+		}
+	}	
+	
     </script>
 
-    <style type="text/css" media="screen">
-        html, body, svg { width: 100%; height: 100%;}
-    </style>
-  </script>
 </body>
-</html>
