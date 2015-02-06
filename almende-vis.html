@@ -1,5 +1,4 @@
 <!--TODO: 
-0. Stop bubbling del event when editing text in the input1. Currently this also deletes nodes.
 1. show/hide on hover. The must be a hover option to 
 make object visible/hidden. Hidden objects disappear when we 
 recede the mouse too far away.
@@ -126,7 +125,7 @@ recede the mouse too far away.
 <script>
 	//
 	window.onerror = function(errorMsg, url, lineNumber) {
-		alert("Error " + errorMsg + " in " + url + ", line " + lineNumber + ". Watch the developer console and propably reload the page.");
+		alert("Error " + errorMsg + " in " + url + ", line " + lineNumber + ". Watch the developer console.");
 	};
 	
 	var shiftPressed = undefined ; 
@@ -135,7 +134,6 @@ recede the mouse too far away.
 		window.addEventListener(evt, function(event) {
 			// Bind to both command (for Mac) and control (for Win/Linux)
 			shiftPressed = event.shiftKey
-			console.log(shiftPressed)
 			if (event.keyCode == 17) {
 				var down = event.type == 'keydown'
 				var newDisplay = down ? 'block' : 'none'
@@ -191,13 +189,14 @@ recede the mouse too far away.
 	// pruned on model update event.
 	options.onDelete = function(deleted, cb) {
 		controller.compound(function() {
-			for (var key in deleted.nodes) {
-				controller.deleteNode(deleted.nodes[key])
-			}
 			for (var key in deleted.edges) {
 				var e = deleted.edges[key].split(controller.separator)
 				console.log('have to delete ' + deleted.edges[key] + " also ")
 				controller.disconnectNodes(e[0], e[1])
+			}
+			for (var key in deleted.nodes) {
+				console.log('deleting ' + deleted.nodes[key])
+				controller.deleteNode(deleted.nodes[key])
 			}
 			return cb([]) // cancel delete -- do in on model update
 		})
@@ -246,7 +245,13 @@ recede the mouse too far away.
 	function visAdd(validName) {
 		//add to graph
 		var added = nodes.add({id: validName, label:validName})
-		
+
+		if (word_list.firstChild) {
+			selected = network.nodes[word_list.firstChild.textContent] // nodes[id] fail for some reason*/
+			var props = {x: selected.x, y: selected.y, allowedToMoveX: true, allowedToMoveY: true}
+			network.nodes[validName].setProperties(props)
+		}
+
 		// add to list
 		var li = document.createElement("LI");
 		li.appendChild(document.createTextNode(validName));
@@ -308,7 +313,9 @@ recede the mouse too far away.
 		}
 		else if (evt.oldValue == null) {
 			//console.log("remote event: created " + evt.property)
-			var added = visAdd(evt.property)
+			
+			visAdd(evt.property)
+			
 			if (willingToSelect == evt.property) selectNode(willingToSelect)
 			//connectButtonClicked([added])
 		}

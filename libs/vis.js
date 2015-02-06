@@ -16277,7 +16277,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
     if (this.constants.dataManipulation.enabled == true) {
       this.keycharm.bind("esc",this._createManipulatorBar.bind(me));
-      this.keycharm.bind("delete",this._deleteSelected.bind(me));
+      this.keycharm.bind("delete",this._deleteSelected.bind(me)); // this will conflict with input text edit!
     }
   };
 
