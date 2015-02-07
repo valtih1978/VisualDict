@@ -107,6 +107,11 @@ function Controller() {
 			console.log("disconnecting " + b + " from " + a + "("+me.graph.get(a)+")")
 		})
 	}
+	
+	this.removeEdge = function(edgeId) {
+		var pair = edgeId.split(me.separator)
+		me.disconnectNodes(pair[0], pair[1])
+	}
 
 	this.connect = function(a,b) {
 		a = validate(a, true) ; b = validate(b, true)

@@ -35,11 +35,16 @@ recede the mouse too far away.
 	<tr><td><button id="flip_button" onclick="flipButtonClicked()" disabled style="display:none">Flip Selected</button></td></tr>
 </table>
   
-  <table onmouseenter="disconnect_button.style.display = 'block'" onmouseleave="disconnect_button.style.display = 'none'" style="float: right">
+  <table onmouseenter="setVisibility([disconnect_button, editedge_button], 'block')" onmouseleave="setVisibility([disconnect_button, editedge_button], 'none')" style="float: right">
 	<tr><td><button id="connect_button" onclick="connectButtonClicked([])" disabled>connect</button></td></tr>
 	<tr><td><button id="disconnect_button" onclick="disconnectButtonClicked()" disabled style="display:none">break</button></td></tr>
+	<tr><td><button id="editedge_button" onclick="editEdgeButtonClicked()" disabled style="display:none">edited programmatically</button></td></tr>
 	<script>
-	
+		function setVisibility(controls, visibility) {
+			for (var k in controls)
+				controls[k].style.display = visibility
+		}
+		
 		function addBarExpand(visibility)  {
 			add_button.style.display = visibility
 			delete_button.style.display = visibility
@@ -161,9 +166,12 @@ recede the mouse too far away.
 	var options = {
 		dataManipulation: {enabled: true, initiallyVisible:false},
 		onConnect: function (edge, callback) {
-			console.log('onUpdate ' + JSON.stringify(edge))
+			console.log('on connect ' + JSON.stringify(edge))
 			controller.connect(edge.from, edge.to)
 			callback([]); // cancel update. Do it with model update
+		},
+		onEditEdge: function (edge, callback) {
+			callback(editedge_button.data = edge); // track changes
 		},
 		/*nodes: { // having only text obfuscates its location on the edges
 			shape: "text",
@@ -190,9 +198,8 @@ recede the mouse too far away.
 	options.onDelete = function(deleted, cb) {
 		controller.compound(function() {
 			for (var key in deleted.edges) {
-				var e = deleted.edges[key].split(controller.separator)
-				console.log('have to delete ' + deleted.edges[key] + " also ")
-				controller.disconnectNodes(e[0], e[1])
+				console.log('deleting ' + deleted.edges[key])
+				controller.removeEdge(deleted.edges[key])
 			}
 			for (var key in deleted.nodes) {
 				console.log('deleting ' + deleted.nodes[key])
@@ -217,7 +224,7 @@ recede the mouse too far away.
 		delete_button.disabled = rename_button.disabled = (nodes.length != 1)
 		connect_button.disabled = (nodes.length < 2)
 		flip_button.disabled = (nodes.length != 2)
-		disconnect_button.disabled = (nodes.length < 1)
+		editedge_button.disabled = (network.getSelection().edges.length != 1)
 		
 		// select item in the list
 		updateListSelection(nodes)
@@ -296,6 +303,40 @@ recede the mouse too far away.
 		//console.log("breaking " + ids.join('|'))
 		options.onDelete({edges:ids} , function() {})
 	}
+	
+	editedge_button.textContent = 'Edit Edge'
+	function editEdgeButtonClicked() {
+		if (editedge_button.textContent == 'Edit Edge') {
+			editedge_button.data = null
+			network._createEditEdgeToolbar.call(network)
+			editedge_button.textContent = 'Done Editing Edge'
+		}
+		else {
+			network._createManipulatorBar.call(network)
+			recoverEditEdge()
+			var newEdge = editedge_button.data
+			if (newEdge != null) {
+				controller.compound(function() {
+					controller.removeEdge(newEdge.id)
+					controller.connect(newEdge.from, newEdge.to)
+				})
+			}
+		}
+	}
+
+	// can be called due to delete-cancel of when user confirmes the edit
+	function recoverEditEdge() {
+		editedge_button.textContent = 'Edit Edge'
+		var newEdge = editedge_button.data
+		if (newEdge == null) return // no edit was actually started -- nothing to roll back
+		edges.remove(newEdge.id)
+		var originalConnection = newEdge.id.split(controller.separator)
+		visConnect(originalConnection[0], originalConnection[1])
+	}
+	
+	network.keycharm.bind("esc", function(evt) {
+		if (editedge_button.textContent != 'Edit Edge')
+			recoverEditEdge()})
 
 	// called by controller.js
 	function onMapValueChanged(evt) {
@@ -321,13 +362,11 @@ recede the mouse too far away.
 			var newList = evt.newValue.split(controller.separator)
 			newList.map(function(n) {
 				if (listWas.indexOf(n) == -1) {
-					console.log('connected a: ' + src + "-" + n)
 					visConnect(src, n)
 				}
 			})
 			listWas.map(function(w) {
 				if (newList.indexOf(w) == -1) {
-					console.log('disconnected ' + src + "-" + w)
 					edges.remove(edgeId(src, w))
 				}
 			});
