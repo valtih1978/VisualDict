@@ -239,7 +239,6 @@ recede the mouse too far away.
 	// create an array with nodes
 	nodes = new vis.DataSet();
 	edges = new vis.DataSet();
-
   // create a network
 	  //var container = document.getElementById('mynetwork');
 	var network = new vis.Network(
@@ -295,17 +294,15 @@ recede the mouse too far away.
 	function visConnect(nodeA, nodeB) {
 		if (validEdgeDir(nodeA, nodeB)) 
 			edges.add({id: edgeId(nodeA, nodeB), from: nodeA, to: nodeB})
-			
-		// this is needed due to bug 623, https://github.com/almende/vis/issues/623
+/*			
+		// unselecting here is needed due to bug 623, https://github.com/almende/vis/issues/623
 		// Basically, edge edit unselects edges but it is reported as
 		// selected in network.getSelection() and, thus, we enter 
 		// edit edge mode instead of draw new edge on cotrol pres and crush
-		//network.selectNodes([])
 		
-		// a better workaround. It unselects edges, leaving nodes selected
-		network.selectNodes(network.getSelection().nodes)
-
-
+		// I have commened the line to reproduce the bug
+		network.selectEdges([])
+*/
 	}
 
 	function addnodeButtonClicked() {
