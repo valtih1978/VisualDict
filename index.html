@@ -70,12 +70,14 @@
 	see below. I think that it has reached usable stage and 
 	<a href="https://www.youtube.com/watch?v=PzOmyxiEnsI">
 	this video demonstrates what you should see</a>. Yet, it becomes
-	difficult to work with and laggy at 300 words. To overcome
+	difficult to work with and laggy at 700 words. To overcome
 	these issues altogether, we need 
-	to add dynamic autoexpand/collapse functionality on mouse 
-	hover, the way <a href="http://arborjs.org"> arborjs.org</a> 
+	to add dynamic autoexpand/collapse (show/hide parts of the 
+	graph for the items you have selected to stay visible 
+	constantly) functionality on mouse hover, the way 
+	<a href="http://arborjs.org"> arborjs.org</a> 
 	and <a href="http://maxdemarzi.com/2013/05/29/visualizing-the-news-with-vivagraph-js/">
-	VivaGraph (example down)</a> propose, as well as language
+	VivaGraph (example below)</a> propose, as well as language
 	differentiation (node color?). Currently, related words are
 	enumerated through comma in the DB (comma  is forbidden in 
 	the words, therefore, though this may be wrong idea if we 
@@ -111,7 +113,14 @@
 	unavoidable with Google RT and enableds undo/redo for free. 
 	The database is stored in VisualDict file your google drive.
 	You may rename it or copy it for backup and switch files 
-	(trashed files are not visible for picking). Alternatively,
+	(trashed files are not visible for picking). Actually, 
+	because <a href="http://stackoverflow.com/a/22362913/4275251">
+	Google realtime documents are not garbage-collected</a> and
+	there is 10 MB limit on document, we need app-generated
+	backup file which would export current graph into a fresh 
+	file. 
+	<p>
+	Alternatively,
 	we could use <a href="https://coderwall.com/p/duapqq/use-a-google-spreadsheet-as-your-json-backend">
 	Google Speadsheets as JSON backed</a>.
 	<hr>
@@ -125,37 +134,65 @@
 	Thoug it does support "make connections" facility, it does not support automatic layout and
 	Integration with Realtime Model was not even started.</li>
 	<li>
-		I have later realized that I can connect nodes like this 
-		https://dl.dropboxusercontent.com/u/4189520/GraphJS/graphjs.html 
-		-- simply by selecting two nodes. It also worth to try web-cola
-		and <a href="javascript:redirect('vivagraph.html')">VivaGraphJS</a> in place of cytoscape. They seem to provide better 
-		and be more "dynamic" layout with less verbose API.
-		<p> VivaGraph looks very nice and allows a lot of freedom 
-			in drawing the objects. You can specify connections (links)
-			without nodes (nodes are added automatically).
-			However, events, eg. "hover" areachieved
-			by manual drawing of the objects, which I do not like. 
-			This issue is further aggraviated by stupid API, where we have 
-			to write Viva.Graph.svg('circle').attr('r', 10).attr("fill", "red")
-			instead of Viva.Graph.svg('circle', {r:1, color:"red"}).
-			<p>VivoGraph maintains <a href="http://anvaka.github.io/graph-drawing-libraries/#/all">
-			a list of graphical libraries</a>. <a href="http://anvaka.github.io/graph-drawing-libraries/#/library/dhotson_springy">
-			Springy</a> example seems the thing that we are lookig for. It howerver 
-			drwas arrows (which might be confusing) and seems too dynamic 
-			(use too much CPU resources). But more static Cytoscape is hardly a solution
-			because its layout is too dumb.
+	I have later realized that I can connect nodes like this 
+	https://dl.dropboxusercontent.com/u/4189520/GraphJS/graphjs.html 
+	-- simply by selecting two nodes. It also worth to try web-cola
+	and <a href="javascript:redirect('vivagraph.html')">VivaGraphJS</a> in place of cytoscape. They seem to provide better 
+	and be more "dynamic" layout with less verbose API.
+	<p> VivaGraph looks very nice and allows a lot of freedom 
+	in drawing the objects. You can specify connections (links)
+	without nodes (nodes are added automatically).
+	However, events, eg. "hover" areachieved
+	by manual drawing of the objects, which I do not like. 
+	This issue is further aggraviated by stupid API, where we have 
+	to write Viva.Graph.svg('circle').attr('r', 10).attr("fill", "red")
+	<a href="https://github.com/anvaka/VivaGraphJS/issues/121#issue-55491353">
+	instead of Viva.Graph.svg('circle', {r:1, color:"red"})</a>.
+	<p>VivoGraph maintains <a href="http://anvaka.github.io/graph-drawing-libraries/#/all">
+	a list of graphical libraries</a>. <a href="http://anvaka.github.io/graph-drawing-libraries/#/library/dhotson_springy">
+	Springy</a> example seems the thing that we are lookig for. It howerver 
+	drwas arrows (which might be confusing) and seems too dynamic 
+	(<a href="https://github.com/anvaka/VivaGraphJS/issues/121#issuecomment-71645340">
+	use too much CPU resources</a>). But more static Cytoscape 
+	is hardly a solution because its layout is too dumb.
 	</li>
 	<li>
 	<a href="javascript:redirect('almende-vis.html')">
 		almende_vis</a> and <a href="alchemy.html">Graph Alchemist</a> 
-	may solve this problem. It allows to select multiple nodes is the 
-	example and stabilizes (stops consuming CPU cycles) after a while. 
-	Almende network has strange multiselect behaviour: you must keep longer
-	rather than shift-click. Adding nodes is <a href="view-source:http://almende.github.io/chap-links-library/js/network/examples/example12_adding_nodes.html">more than terrible</a> though. It requireds creating intermediate tables. The funny thing is that mine network does not have any addNode(s)/addLink(s) methods! GrphAlchemist on the other hand might be a great library but it is impossible to start with. Docks <a hre="https://github.com/GraphAlchemist/Alchemy/issues/343#issuecomment-71804741">suck from very beginning</a> and describe some inexisting configuraion properties. At least I could not find what <a href="http://graphalchemist.github.io/Alchemy/#/docs">nodeCaption</a> applies to. When I try to pan my example, it fails with Cannot read property 'conf' of undefined and "Cannot read property 'vis' of undefined" in alchemy.min.js. Yet, they somehow do that in examples: <a href="http://almende.github.io/vis/examples/network/16_dynamic_data.html">16 manual graph editor</a> and <a href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">21 visual graph editor</a> (<a href="https://github.com/almende/vis/tree/master/examples/network">sources</a>)
-		</li>
+	address multiselect and stabilization in the examples: they
+	consuming CPU cycles) after a while. Almende network has 
+	strange multiselect behaviour: you must keep longer rather 
+	than shift-click (I have added click+shift). Adding nodes is 
+	<a href="view-source:http://almende.github.io/chap-links-library/js/network/examples/example12_adding_nodes.html">
+	more than terrible</a> though. It requireds creating intermediate 
+	tables. The funny thing is that mine network does not have any 
+	addNode(s)/addLink(s) methods! Yet, thanks to examples
+	<a href="http://almende.github.io/vis/examples/network/16_dynamic_data.html">
+	(16 manual graph editor)</a> and <a href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">
+	(21 visual graph editor)</a>, I have realized how they achieved
+	that and using it as primary editor. 
 	<p>
-	We will load data incrementally. If user wants to clean up the screen - let him refresh.
-	We will also maintain uneditable but seekable list, like phrasebook does for search.
+	Now however, I think that my graph is very large and I need
+	Vivagraph with its blazing WebGL performance. The stupid API
+	is not the issue (<a href="https://github.com/anvaka/VivaGraphJS/issues/121#issuecomment-71645340">I could add the API myself</a>)
+	The API is more complex than Almende for another reason: I see 
+	no way to render text nodes (let's ignore the ugly linear 
+	edges, unlike truly physical Almende's ribbons). This <a href="https://github.com/anvaka/VivaGraphJS/issues/86#issuecomment-73383520">
+	seems plainly impossible. Although, <a href="http://stackoverflow.com/questions/28373796">
+	asking this at Stackexchange is banned</a>. <a href="http://meta.stackoverflow.com/questions/285545">
+	As usually.</a>
+	<p>
+	GrphAlchemist on the other hand might be a great library 
+	but <a href="https://github.com/GraphAlchemist/Alchemy/issues/543">
+	it is impossible to start with</a>. The docs <a hre="https://github.com/GraphAlchemist/Alchemy/issues/343#issuecomment-71804741">
+	suck from the very beginning</a> and describe some inexisting 
+	configuraion properties. At least I could not find what 
+	<a href="http://graphalchemist.github.io/Alchemy/#/docs">
+	nodeCaption</a> applies to. When I try to pan my example, 
+	it fails with Cannot read property 'conf' of undefined and 
+	"Cannot read property 'vis' of undefined" in alchemy.min.js. 
+	</li>
+	<p>
    
  </body>
  </html>

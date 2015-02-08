@@ -1,13 +1,3 @@
-//TODO: use unidirected edges in place of bidirectional, likewise
-// almende-vis.html does. Here in controller (in Google Realtime DB),
-// we store connections like two comma-separated lists: if a is connected
-// to b, then we have key 'a' in DB.graph, which maps to b-containing list
-// and there is also 'b' key which maps to a list which contains 'a'.
-// Every time a link is created, both lists are updated. It would
-// save memory and simplify clients if only one one mapping would
-// maintain the link. In almende, to prevent visulizing two links,
-// I visualized only one where 'from' node is lexicographically less than
-// 'to' node (equality is not possible in my model).
 
 var controller = undefined // initialized at file load
 
