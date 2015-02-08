@@ -311,7 +311,8 @@ recede the mouse too far away.
 	function addnodeButtonClicked() {
 		var connectTo = network.getSelection().nodes
 		controller.compound(function() {
-			willingToSelect = controller.createNode(input1.value)
+			if (controller.graph.get(input1.value) == null)
+				willingToSelect = controller.createNode(input1.value)
 			for (var key in connectTo)
 				controller.connect(connectTo[key], input1.value)
 		})
