@@ -34,7 +34,7 @@ recede the mouse too far away.
 	<tr><td><input id="input1" onkeydown="if (event.keyCode == 13) addnodeButtonClicked()"/></td></tr>
 	<tr><td><button id="add_button" onclick="addnodeButtonClicked()" style="display:none">add node</button></td></tr>
 	<tr><td><button id="rename_button" onclick="renameButtonClicked()" disabled style="display:none">Rename</button></td></tr>
-	<tr><td><button id="delete_button" onclick="deleteButtonClicked()" style="display:none">Delete Selected</button></td></tr>
+	<tr><td><button id="delete_button" onclick="deleteButtonClicked()" disabled style="display:none">Delete Selected</button></td></tr>
 	<tr><td><button id="flip_button" onclick="flipButtonClicked()" disabled style="display:none">Flip Selected</button></td></tr>
 </table>
   
@@ -68,13 +68,11 @@ recede the mouse too far away.
 			}
 		});
 		function selectNode(id) {
-			console.log(window.event)
 			var selected = (shiftPressed) 
 				? network.getSelection().nodes : []
 			selected.push(id)
 			network.selectNodes(selected) // select in graph
-			//updateListSelection([id])
-			onselect(selected)
+			onselect(network.getSelection())
 		}
 		function getLI(word) {
 			var list = word_list.querySelectorAll('li');
@@ -247,16 +245,18 @@ recede the mouse too far away.
 	network.editMode = true // https://github.com/almende/vis/issues/605#issue-55793606
 	network._createManipulatorBar()
 	
-	function onselect(nodes) {
-		console.log("params.nodes: " + nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
-		delete_button.disabled = rename_button.disabled = (nodes.length != 1)
+	function onselect(selected) {
+		var nodes = selected.nodes
+		console.log("selected.nodes: " + nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
+		delete_button.disabled = nodes.length + selected.edges.length == 0
 		connect_button.disabled = (nodes.length < 2)
+		rename_button.disabled = nodes.length != 1
 		flip_button.disabled = (nodes.length != 2)
 		
 		// select item in the list
 		updateListSelection(nodes)
 	}
-	network.on('select', function(params) {onselect(params.nodes)})
+	network.on('select', onselect)
 	
 	function renameButtonClicked() {
 		var selected = network.getSelection().nodes
@@ -310,12 +310,18 @@ recede the mouse too far away.
 
 	function addnodeButtonClicked() {
 		var connectTo = network.getSelection().nodes
+		var newWords = input1.value.split(controller.separator)
 		controller.compound(function() {
-			if (controller.graph.get(input1.value) == null)
-				willingToSelect = controller.createNode(input1.value)
-			for (var key in connectTo)
-				controller.connect(connectTo[key], input1.value)
+			for (var i in newWords) {
+				var newWord = newWords[i].trim()
+				if (controller.graph.get(newWord) == null)
+					willingToSelect = controller.createNode(newWord)
+				for (var key in connectTo)
+					controller.connect(connectTo[key], newWord)
+				connectTo.push(newWord) // chain new words together
+			}
 		})
+		//input1.value = ""
 	}
 	function connectButtonClicked(plusAdded) {
 		var ids = network.getSelection().nodes.concat(plusAdded)
