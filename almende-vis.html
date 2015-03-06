@@ -190,6 +190,7 @@ recede the mouse too far away.
 
 	var options = {
 		dataManipulation: {enabled: true, initiallyVisible:false},
+		clustering: true,
 		onConnect: function (edge, callback) {
 			console.log('on connect ' + JSON.stringify(edge))
 			controller.connect(edge.from, edge.to)
@@ -238,13 +239,6 @@ recede the mouse too far away.
 	nodes = new vis.DataSet();
 	edges = new vis.DataSet();
 
-  // create a network
-	  //var container = document.getElementById('mynetwork');
-	var network = new vis.Network(
-		network_div, {nodes: nodes, edges: edges}, options);
-	network.editMode = true // https://github.com/almende/vis/issues/605#issue-55793606
-	network._createManipulatorBar()
-	
 	function onselect(selected) {
 		var nodes = selected.nodes
 		console.log("selected.nodes: " + nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
@@ -256,7 +250,6 @@ recede the mouse too far away.
 		// select item in the list
 		updateListSelection(nodes)
 	}
-	network.on('select', onselect)
 	
 	function renameButtonClicked() {
 		var selected = network.getSelection().nodes
@@ -280,7 +273,7 @@ recede the mouse too far away.
 		//add to graph
 		var added = nodes.add({id: validName, label:validName})
 
-		if (word_list.firstChild) {
+		if (this.network) if (word_list.firstChild) {
 			selected = network.nodes[word_list.firstChild.textContent] // nodes[id] fail for some reason*/
 			var props = {x: selected.x, y: selected.y, allowedToMoveX: true, allowedToMoveY: true}
 			network.nodes[validName].setProperties(props)
@@ -303,7 +296,7 @@ recede the mouse too far away.
 		//network.selectNodes([])
 		
 		// a better workaround. It unselects edges, leaving nodes selected
-		network.selectNodes(network.getSelection().nodes)
+		if (this.network) network.selectNodes(network.getSelection().nodes)
 
 
 	}
@@ -359,10 +352,6 @@ recede the mouse too far away.
 		visConnect(originalConnection[0], originalConnection[1])
 	}
 	
-	network.keycharm.bind("esc", function(evt) {
-		if (ConnectMode_span.style.display == 'block')
-			recoverEditEdge()})
-
 	// called by controller.js
 	function onMapValueChanged(evt) {
 		if (evt.newValue == null) {
@@ -415,6 +404,18 @@ recede the mouse too far away.
 			for (var j in associations)
 				visConnect(key, associations[j])
 		}
+	  // create a network
+		  //var container = document.getElementById('mynetwork');
+		network = new vis.Network(
+			network_div, {nodes: nodes, edges: edges}, options);
+		network.editMode = true // https://github.com/almende/vis/issues/605#issue-55793606
+		network._createManipulatorBar()
+		network.on('select', onselect)
+		network.keycharm.bind("esc", function(evt) {
+			if (ConnectMode_span.style.display == 'block')
+				recoverEditEdge()})
+
+
 	}	
     </script>
 
