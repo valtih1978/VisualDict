@@ -30,29 +30,29 @@ recede the mouse too far away.
 	<tr><td><button id="redoButton" style="display:none" disabled>Redo</button></td></tr>
   </table >
   
-  <table onmouseenter="addBarExpand('block')" onmouseleave="addBarExpand('none')" style="float: right">
+  <table onmouseenter="classVisible('connbar', 'block')" onmouseleave="classVisible('connbar', 'none')" style="float: right">
+	<tr><td><button id="connect_button" onclick="connButtonClicked([])" disabled>conn strong</button></td></tr>
+	<tr><td><button class="connbar" id="circle_button" onclick="circleButtonClicked([])" disabled>circle conn</button></td></tr>
+	<tr><td><button class="connbar" id="merge_button" onclick="mergeButtonClicked()" disabled title="Merge into the first selected item." style="display:none">merge</button></td></tr>
+	<tr><td><button class="connbar" id="breakNodes_button" onclick="breakNodesClicked()" disabled title="Breaks connections between selected nodes">break</button></td></tr>
+	<tr><td><button class="connbar" id="delete_button" onclick="deleteButtonClicked()" disabled>Delete Selected</button></td></tr>
+	<tr><td><button class="connbar" id="flip_button" onclick="flipButtonClicked()" disabled>Flip Selected</button></td></tr>
+  </table>
+  <style>.connbar{display:none}</style>
+  <table onmouseenter="classVisible('addbar', 'block')" onmouseleave="classVisible('addbar', 'none')" style="float: right">
 	<tr><td><input id="input1" onkeydown="if (event.keyCode == 13) addnodeButtonClicked()"/></td></tr>
-	<tr><td><button id="add_button" onclick="addnodeButtonClicked()" style="display:none">add node</button></td></tr>
-	<tr><td><button id="rename_button" onclick="renameButtonClicked()" disabled style="display:none">Rename</button></td></tr>
-	<tr><td><button id="delete_button" onclick="deleteButtonClicked()" disabled style="display:none">Delete Selected</button></td></tr>
-	<tr><td><button id="flip_button" onclick="flipButtonClicked()" disabled style="display:none">Flip Selected</button></td></tr>
-</table>
-  
-  <table onmouseenter="setVisibility([disconnect_button], 'block')" onmouseleave="setVisibility([disconnect_button], 'none')" style="float: right">
-	<tr><td><button id="connect_button" onclick="connectButtonClicked([])" disabled>connect</button></td></tr>
-	<tr><td><button id="disconnect_button" onclick="disconnectButtonClicked()" disabled style="display:none">break</button></td></tr>
+	<tr><td><button class="addbar" id="add_button" onclick="addnodeButtonClicked()" style="display:none">add node</button></td></tr>
+	<tr><td><button class="addbar" id="rename_button" onclick="renameButtonClicked()" disabled style="display:none">Rename</button></td></tr>
+  </table>
+
 	<script>
-		function setVisibility(controls, visibility) {
-			for (var k in controls)
+		function classVisible(cls, visibility) {
+			var controls = document.querySelectorAll("." + cls);
+			for (var k=0 ; k < controls.length; k++)
 				controls[k].style.display = visibility
+
 		}
 		
-		function addBarExpand(visibility)  {
-			add_button.style.display = visibility
-			delete_button.style.display = visibility
-			flip_button.style.display = visibility
-			rename_button.style.display = visibility
-		}
 		word_list.addEventListener("click", function(e) {
 			if(e.target && e.target.nodeName == "LI") {
 				//console.log(e.target.textContent + " was clicked");
@@ -111,7 +111,6 @@ recede the mouse too far away.
 		}
 
 	</script>
-  </table>
   
   
   <span id="ConnectMode_span" style="display:none">connect mode</span>
@@ -190,7 +189,6 @@ recede the mouse too far away.
 
 	var options = {
 		dataManipulation: {enabled: true, initiallyVisible:false},
-		clustering: true,
 		onConnect: function (edge, callback) {
 			console.log('on connect ' + JSON.stringify(edge))
 			controller.connect(edge.from, edge.to)
@@ -243,7 +241,10 @@ recede the mouse too far away.
 		var nodes = selected.nodes
 		console.log("selected.nodes: " + nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
 		delete_button.disabled = nodes.length + selected.edges.length == 0
-		connect_button.disabled = (nodes.length < 2)
+		connect_button.disabled = circle_button.disabled =
+			merge_button.disabled = (nodes.length < 2)
+		breakNodes_button.disabled = (nodes.length < 2)
+
 		rename_button.disabled = nodes.length != 1
 		flip_button.disabled = (nodes.length != 2)
 		
@@ -254,7 +255,7 @@ recede the mouse too far away.
 	function renameButtonClicked() {
 		var selected = network.getSelection().nodes
 		//nodes.update({id: selected[0], label:validName})
-		controller.renameNode(selected[0], input1.value)
+		controller.renameNode(selected[0], willingToSelect = input1.value)
 	}
 	
 	function flipButtonClicked() {
@@ -288,7 +289,7 @@ recede the mouse too far away.
 	function visConnect(nodeA, nodeB) {
 		if (validEdgeDir(nodeA, nodeB)) 
 			edges.add({id: edgeId(nodeA, nodeB), from: nodeA, to: nodeB})
-			
+		
 		// this is needed due to bug 623, https://github.com/almende/vis/issues/623
 		// Basically, edge edit unselects edges but it is reported as
 		// selected in network.getSelection() and, thus, we enter 
@@ -316,13 +317,8 @@ recede the mouse too far away.
 		})
 		//input1.value = ""
 	}
-	function connectButtonClicked(plusAdded) {
+	function circleButtonClicked(plusAdded) {
 		var ids = network.getSelection().nodes.concat(plusAdded)
-		console.log("joining = " + ids.join(','))
-		
-		/*for (var i = 1 ; i != ids.length ; i++)
-			visConnect(ids[i-1], ids[i])
-		if (ids.length > 2) visConnect(ids[ids.length-1], ids[0])*/
 		controller.compound(function() {
 			for (var i = 1 ; i != ids.length ; i++)
 				controller.connect(ids[i-1], ids[i])
@@ -330,16 +326,38 @@ recede the mouse too far away.
 		})
 	}
 	
-	function disconnectButtonClicked() {
-		var ids = network.getSelection().edges
+	function connButtonClicked(plusAdded) {
+		var ids = network.getSelection().nodes.concat(plusAdded)
+		controller.compound(function() {
+			for (var i in ids) for (var j in ids)
+				controller.connect(ids[i], ids[j])
+		})
+	}
+	
+	function mergeButtonClicked() {
+		var ids = network.getSelection().nodes
+		var survivor = ids[0] ; var victims = ids.slice().splice(1)
+		controller.compound(function() {
+			for (var v in victims) {
+				var conns = controller.listConnections(victims[v])
+				for (var c in conns) {
+					if (ids.indexOf(conns[c]) == -1)
+						controller.connect(survivor, conns[c])
+				}
+				controller.deleteNode(victims[v])
+			}
+		})
+	}
+	
+	function breakNodesClicked() {
 		var nodes = network.getSelection().nodes
+		var victimEdges = []
 		for (var i in nodes) for (var j in nodes) {
 			var edge = edgeId(nodes[i], nodes[j])
 			if (edges.get(edge) != null && validEdgeDir(nodes[i], nodes[j]))
-				ids.push(edge)
+				victimEdges.push(edge)
 		}
-		//console.log("breaking " + ids.join('|'))
-		options.onDelete({edges:ids} , function() {})
+		options.onDelete({edges:victimEdges}, function() {})
 	}
 	
 	// can be called due to delete-cancel of when user confirmes the edit
@@ -366,7 +384,7 @@ recede the mouse too far away.
 			visAdd(evt.property)
 			
 			if (willingToSelect == evt.property) selectNode(willingToSelect)
-			//connectButtonClicked([added])
+			//circleButtonClicked([added])
 		}
 			
 		else {
@@ -414,7 +432,6 @@ recede the mouse too far away.
 		network.keycharm.bind("esc", function(evt) {
 			if (ConnectMode_span.style.display == 'block')
 				recoverEditEdge()})
-
 
 	}	
     </script>
