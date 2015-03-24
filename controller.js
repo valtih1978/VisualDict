@@ -1,6 +1,4 @@
 
-var controller = undefined // initialized at file load
-
 function Controller() {
 
 	var me = this
@@ -122,74 +120,78 @@ function Controller() {
 		})
 	}
 
-}
-
-
-function startRealtime() {
-
-	function initializeModel(model) {
-		function append(title, dict) {
-			model.getRoot().set(title, model.createMap(dict));
-		}
-		append('configuration', {langs:{'default': 'blue'}
-								, separator: ','})
-		append('graph', {a:"b,c", b:"a", c:"a",m:""})
+	this.getConfiguration = function () {
+		return me.model.getRoot().get('configuration')
 	}
+
+	this.defaultConfig = {langs:{'default': 'blue'}, separator: ','}
 	
-	var loaded = false
-	function _onFileLoaded(doc) {
-		if (loaded) return ; loaded = true // re-load happens on token refresh
-		controller = new Controller()
-		controller.model = doc.getModel() ; controller.separator = controller.model.getRoot().get('configuration').get('separator')
-		controller.graph = controller.model.getRoot().get('graph');
+	this.start = function () {
+
+		function initializeModel(model) {
+			function append(title, dict) {
+				model.getRoot().set(title, model.createMap(dict));
+			}
+			append('configuration', me.defaultConfig)
+			append('graph', {a:"b,c", b:"a,d", c:"a,d",d:"c,b,1", "1":"d"})
+		}
 		
-		function _onMapValueChanged (evt) {
-		/*	//console.log("event = " + showAll(evt))
+		var loaded = false
+		function _onFileLoaded(doc) {
+			if (loaded) return ; loaded = true // re-load happens on token refresh
+			me.model = doc.getModel() ; me.separator = me.model.getRoot().get('configuration').get('separator')
+			me.graph = me.model.getRoot().get('graph');
 			
-			// null => "" when created
-			// "something" => null when deleted
-			if (evt.newValue == null) console.log("remote event: deleted " + evt.property)
-			else if (evt.oldValue == null) console.log("remote event: created " + evt.property)
-			else console.log("remote event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)*/
-			
-			onMapValueChanged(evt)
+			function _onMapValueChanged (evt) {
+			/*	//console.log("event = " + showAll(evt))
+				
+				// null => "" when created
+				// "something" => null when deleted
+				if (evt.newValue == null) console.log("remote event: deleted " + evt.property)
+				else if (evt.oldValue == null) console.log("remote event: created " + evt.property)
+				else console.log("remote event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)*/
+				
+				onMapValueChanged(evt)
+			}
+
+			me.graph.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED,
+				_onMapValueChanged);
+			onFileLoaded(doc)
+		/*      textArea2.onkeyup = function() {
+			string.setText(textArea2.value);
+		  };*/
+
+		  undoButton.onclick = function(e) {
+			me.model.undo();
+		  };
+		  redoButton.onclick = function(e) {
+			me.model.redo();
+		  };
+
+		  // Add event handler for UndoRedoStateChanged events.
+		  var onUndoRedoStateChanged = function(e) {
+			undoButton.disabled = !e.canUndo;
+			redoButton.disabled = !e.canRedo;
+		  };
+		  me.model.addEventListener(gapi.drive.realtime.EventType.UNDO_REDO_STATE_CHANGED, onUndoRedoStateChanged);
+		}
+		
+		var realtimeOptions = {
+		  // * Client ID from the console.
+		  clientId: '1088706429537-4oqhqr7o826ditbok23sll1rund1jim1.apps.googleusercontent.com',
+		   //* The ID of the button to click to authorize. Must be a DOM element ID.
+		  authButtonElementId: 'authorizeButton',
+		  initializeModel: initializeModel, // Function to be called when a Realtime model is first created.
+		  autoCreate: true, // Autocreate files right after auth automatically.
+		  onFileLoaded: _onFileLoaded, // Function to be called every time a Realtime file is loaded.
+		  registerTypes: null, // No action to inityalize custom Collaborative Objects types.
+		  afterAuth: null // No action after authorization and before loading files.
 		}
 
-		controller.graph.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED,
-			_onMapValueChanged);
-		onFileLoaded(doc)
-	/*      textArea2.onkeyup = function() {
-		string.setText(textArea2.value);
-	  };*/
-
-	  undoButton.onclick = function(e) {
-		controller.model.undo();
-	  };
-	  redoButton.onclick = function(e) {
-		controller.model.redo();
-	  };
-
-	  // Add event handler for UndoRedoStateChanged events.
-	  var onUndoRedoStateChanged = function(e) {
-		undoButton.disabled = !e.canUndo;
-		redoButton.disabled = !e.canRedo;
-	  };
-	  controller.model.addEventListener(gapi.drive.realtime.EventType.UNDO_REDO_STATE_CHANGED, onUndoRedoStateChanged);
+		rtclient.loaderInst = new rtclient.RealtimeLoader(realtimeOptions);
+		rtclient.loaderInst.start();
 	}
 	
-	var realtimeOptions = {
-	  // * Client ID from the console.
-	  clientId: '1088706429537-4oqhqr7o826ditbok23sll1rund1jim1.apps.googleusercontent.com',
-	  
-	   //* The ID of the button to click to authorize. Must be a DOM element ID.
-	  authButtonElementId: 'authorizeButton',
-	  initializeModel: initializeModel, // Function to be called when a Realtime model is first created.
-	  autoCreate: true, // Autocreate files right after auth automatically.
-	  onFileLoaded: _onFileLoaded, // Function to be called every time a Realtime file is loaded.
-	  registerTypes: null, // No action to inityalize custom Collaborative Objects types.
-	  afterAuth: null // No action after authorization and before loading files.
-	}
-
-  rtclient.loaderInst = new rtclient.RealtimeLoader(realtimeOptions);
-  rtclient.loaderInst.start();
+	this.start()
 }
+

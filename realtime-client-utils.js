@@ -3,7 +3,6 @@
  */
 var rtclient = rtclient || {}
 
-
 /**
  * MIME type for newly created Realtime files.
  * @const
@@ -13,6 +12,20 @@ rtclient.REALTIME_MIMETYPE = 'application/vnd.google-apps.drive-sdk'
 function mimeType() {
 	return rtclient.REALTIME_MIMETYPE + "." + rtclient.clientId.split('-')[0]
 }
+
+rtclient.dialog = (function() {
+	var dialog = document.createElement("div"); dialog.id = "rtclient_file_picker_dialog"
+	// el.style = // has no effect
+	function style(el, value) {
+		var value = value.split(";") ; for (var s in value) { 
+			var pair = value[s].split(":") ; el.style[pair[0].trim()] = pair[1].trim()
+		}
+	}
+	style(dialog, "visibility: hidden; position: fixed; left: 0px; top: 0px; width:100%; height:100%; z-index: 1000")
+	var content = document.createElement("div"); content.id = "rtclient_file_picker_content"
+	style(content, "height:100%; background:white; margin:0 auto; overflow:auto") ; dialog.appendChild(content)
+	document.body.appendChild(dialog); return dialog; }())
+
 
 /**
  * Parses the hash parameters to this page and returns them as an object.
@@ -102,12 +115,12 @@ rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
 		}
 		if (authResult && !authResult.error) {
 			log("ok")
-		  _this.authButton.disabled = true;
+		  _this.authButton.style.display = 'none';
 		  //_this.fetchUserId(onAuthComplete);
 		  onAuthComplete()
 		} else {
 			log("error")
-		  _this.authButton.disabled = false;
+		  _this.authButton.style.display = 'block';
 		  _this.authButton.onclick = function() {authorize(false)};
 		}
 	};
@@ -214,8 +227,6 @@ rtclient.RealtimeLoader = function(options) {
 	this.initializeModel = rtclient.getOption('initializeModel');
 	this.registerTypes = rtclient.getOption('registerTypes', function(){});
 	this.afterAuth = rtclient.getOption('afterAuth', function(){})
-	this.autoCreate = rtclient.getOption('autoCreate', false); // This tells us if need to we automatically create a file after auth.
-	this.defaultTitle = rtclient.getOption('defaultTitle', 'VisualDict');
 	this.authorizer = new rtclient.Authorizer();
 }
 
@@ -228,6 +239,7 @@ rtclient.RealtimeLoader = function(options) {
 rtclient.RealtimeLoader.prototype.redirectTo = function(fileId, reload) {
 
   // Naive URL construction.
+  rtclient.dialog.style.visibility = 'hidden'
   var newUrl = '#fileId=' + fileId;
   // Using HTML URL re-write if available.
   if (window.history && window.history.replaceState)
@@ -252,12 +264,8 @@ rtclient.RealtimeLoader.prototype.start = function() {
   var _this = this;
 
   this.authorizer.start(function() {
-    if (_this.registerTypes) {
-      _this.registerTypes();
-    }
-    if (_this.afterAuth) {
-      _this.afterAuth();
-    }
+    if (_this.registerTypes) _this.registerTypes();
+    if (_this.afterAuth) _this.afterAuth();
     _this.load();
   });
 }
@@ -308,50 +316,90 @@ rtclient.RealtimeLoader.prototype.load = function() {
     }
   }
 
-  if (this.autoCreate) {
-    this.createNewFileAndRedirect();
-  }
+   rtclient.selectOrCreateNew();
 }
 
 
 /**
  * Creates a new file and redirects to the URL to load it.
  */
-rtclient.RealtimeLoader.prototype.createNewFileAndRedirect = function() {
+rtclient.selectOrCreateNew = function() {
   // No fileId or state have been passed. We create a new Realtime file and
   // redirect to it.
   
-  var _this = this;
-  var fname = this.defaultTitle
+  var _this = rtclient.loaderInst;
+  
+  this.dialog.style.visibility = 'visible'
+  
+	
+	function html(type, attributes, text) {
+		var el = document.createElement(type);
+		if (attributes) for (var a in attributes) el[a] = attributes[a]
+		rtclient.dialog.firstChild.appendChild(el); 
+		if (text) el.appendChild(document.createTextNode(text));
+		return el
+	}
+	
+	html("h1", {}, "Fetching list of available files")
+	
     gapi.client.load('drive', 'v2', function() {
-
+	
+	
 	// Pick file automatically if one already exists
     gapi.client.drive.files.list({q:"mimeType = '"+mimeType()+"' and trashed=false"}).execute(function(resp) {
 		// if next page token -- fetch another page
-		console.log("already exist " + resp.items.length + " files")
+			
+		rtclient.dialog.firstChild.innerHTML = '';
 		if (resp.items.length > 0) {
-			if (resp.items.length == 1) _this.redirectTo(resp.items[0].id);
-			else pick()
+			var table = html('table', {border: 1})
+			var fields = // Object.keys(resp.items[0]) // all available fields
+				["title", "selfLink", "mimeType", "createdDate", "modifiedDate", "modifiedByMeDate", "quotaBytesUsed", "version"]
+			function row(fieldValue) { var tr = table.insertRow(0)
+				for (var fld in fields) { var field = fields[fld];
+				   tr.insertCell(fld).appendChild(document.createTextNode(fieldValue(field)));
+				} ; return tr
+			}
+			for (var ri in resp.items) {
+				var file = resp.items[ri]
+				var tr = row(function (field) { return file[field] })
+				tr.title = file.id ; tr.onclick = function() {
+					SelectedFileName.value = this.firstChild.textContent
+					SelectedFileId.value = this.title ; SelectFileButton.disabled = false
+				}
+			} ; row(function(field) {return field}) 
+			function b(text) {html("b", {}, text)} ; html("br", {})
+			b("File name: ") ; html("input", {id: 'SelectedFileName', disabled:true})
+			b(" File id: ") ; html("input", {id: 'SelectedFileId', disabled:true})
+			b(" ") ; var but1 = html("button", {id: 'SelectFileButton', disabled:true, onclick:function() {_this.redirectTo(SelectedFileId.value, true)}}, "Select") ; ; html("p", {}) ; 
 		}
-			  
-		else 
+		b("New file: ") ; html("input", {id: 'NewFileName', value: 'VisualDict-' + (resp.items.length+1)}) ; 
+		b(" ") ; html("button", {onclick: function() {createNew(NewFileName.value)}}, "Create") ; html("p", {})
+		html("button", {onclick:function(){rtclient.dialog.style.visibility = 'hidden'}}, "Cancel") ; b(" ")
+		html("a", {href:"https://drive.google.com/drive/#search?q=app:%22Word Graph Dictionary Visualizer%22"}, "If you wish to rename/edit files, resort to the google drive")
+			/*if (resp.items.length > 1) pick();
+			else if (resp.items.length == 1) _this.redirectTo(resp.items[0].id);
+			else */
+			
+		function createNew(fname) {
 			gapi.client.drive.files.insert({
-			  'resource': {
-				mimeType: rtclient.REALTIME_MIMETYPE,
-				title: fname
-			  }
-			}).execute(function(file) {
-				if (file.id) {
-					console.log("after " + fname + " created with mime "+rtclient.REALTIME_MIMETYPE+" created, redirect file:" + file.id)
-				  _this.redirectTo(file.id);
-				}
-				// File failed to be created, log why and do not attempt to redirect.
-				else {
-				  console.error('Error creating file.');
-				  console.error(file);
-				}
-			}); // insert
-	  }); // list
+				  'resource': {
+					mimeType: rtclient.REALTIME_MIMETYPE,
+					title: fname
+				  }
+				}).execute(function(file) {
+					if (file.id) {
+						console.log("after " + fname + " created with mime "+rtclient.REALTIME_MIMETYPE+" created, redirect file:" + file.id)
+					  _this.redirectTo(file.id, true);
+					}
+					// File failed to be created, log why and do not attempt to redirect.
+					else {
+					  console.error('Error creating file.');
+					  console.error(file);
+					}
+				}); // create
+		}
+		
+	}); // list
 
     }); // load gapi
 	
@@ -359,7 +407,7 @@ rtclient.RealtimeLoader.prototype.createNewFileAndRedirect = function() {
 }
 
 
-function pick() {
+function GooglePick() {
 	function main() {
 		var token = gapi.auth.getToken().access_token;
 		var view = new google.picker.View(google.picker.ViewId.DOCS);
@@ -383,3 +431,5 @@ function pick() {
 	}
 	gapi.load('picker', {'callback': main});
 }
+
+
