@@ -34,6 +34,7 @@ recede the mouse too far away.
   <table onmouseenter="classVisible('aboutbar', 'block')" onmouseleave="classVisible('aboutbar', 'none')" style="float: right; font-size:small">
 	  <tr><td><a href="javascript:window.open('about.html' + location.hash)">About</a></td></tr>
 	  <tr><td><a class="aboutbar" href="javascript:window.open('options.html' + location.hash)">Options</a></td></tr>
+	  <tr class="aboutbar"><td><input type="checkbox" id="clusteredCB" onclick="location.search = 'clustered=' + clusteredCB.checked">Clustered</td></tr>
 	  <tr><td><a class="aboutbar" href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a></td></tr>
 	  <tr><td><button class="aboutbar" onclick="rtclient.selectOrCreateNew()">Pick another file</button></td></tr>
 	  <tr><td><button class="aboutbar" onclick="GooglePick()">Goole file pick</button></td></tr>
@@ -429,8 +430,16 @@ recede the mouse too far away.
 		return (validEdgeDir(a,b) ? [a,b] : [b,a]).join(controller.separator)
 	}
 	
-	function onFileLoaded() { 
-
+	function clustered() {return controller.getConfiguration().get('almende-clustering')}
+	
+	function onFileLoaded() {
+		
+		if (location.search.indexOf("clustered=") != -1) {
+			controller.getConfiguration().set('almende-clustering', location.search.indexOf("clustered=true") != -1)
+			location.search = ''
+		}
+		if (clusteredCB.checked = clustered()) options.clustering = true
+		
 		var keys = controller.graph.keys()
 		//cy.startBatch() try {
 		for (var i in keys) {
@@ -440,17 +449,21 @@ recede the mouse too far away.
 			for (var j in associations)
 				visConnect(key, associations[j])
 		}
-	  // create a network
-		  //var container = document.getElementById('mynetwork');
+
 		network = new vis.Network(
 			network_div, {nodes: nodes, edges: edges}, options);
 		network.editMode = true // https://github.com/almende/vis/issues/605#issue-55793606
 		network._createManipulatorBar()
 		network.on('select', onselect)
 		network.keycharm.bind("esc", function(evt) {
-			if (ConnectMode_span.style.display == 'block')
-				recoverEditEdge()})
+			if (ConnectMode_span.style.display == 'block') recoverEditEdge()})
 
+		// make distance eucledian https://github.com/almende/vis/issues/729
+		network._nodeInActiveArea = function(node) {
+			function squared(x) { return Math.pow(node[x] - network.areaCenter[x],2)}
+			return Math.pow(squared('x') + squared('y'), 1/2)
+				< this.constants.clustering.activeAreaBoxSize/2/this.scale
+		}
 	}	
     </script>
 
