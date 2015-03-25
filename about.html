@@ -75,13 +75,14 @@
 	admit cycles. I have was inflamed to build such tool myself.
 	</p>
 	
-	You can edit the graph using the buttons on this page. Yet, <a style="font-size:250%" href="javascript:redirect('almende-vis.html')"> 
-	visual editor was started</a>. It is based on Almende example 21, 
+	You can edit the graph using the buttons on this page. Yet, <a style="font-size:200%" href="javascript:redirect('almende-vis.html?mode=normal')"> 
+	visual editor</a> was started. It is based on Almende example 21, 
 	see below. I think that it has reached usable stage and 
 	<a href="https://www.youtube.com/watch?v=PzOmyxiEnsI">
 	this video demonstrates what you should see</a>. Yet, it becomes
 	a mess (it is difficult to say where edge is connected to) 
 	and drag at several hundred words. 
+	<p>
 	I tried to overcome the difficulty exploiting a simple fact: 
 	you can see only a limited amount of words on the screen. 
 	There is no need to draw the full graph therefore. Rendering
@@ -90,29 +91,33 @@
 	this issue introducing the notion of <a href="http://en.wikipedia.org/wiki/Synonym_ring">
 	synonym ring or synset</a>.
 	<p>
-	Almende exploits this idea providing <a href="http://visjs.org/examples/network/19_scale_free_graph_clustering.html">
-	clustering</a>. To enable it in VisualDict, <a href="javascript:redirect('almende-vis.html?clustered=true')">
-	specify clustered=true in the url</a>. The problem with Almende 
-	clusterting is though that <a href="https://github.com/almende/vis/issues/696">
-	it cannot navigate to a specific word within the cluster</a>. 
-	That is, we insert words into the graph. I also maintain
-	a list of dictionary words to that you can lookup them 
-	using text search and then navigate to the word in the graph.
-	If Almende collapses however the words into cluster, the 
-	words are removed from the graph! Almende clustering
-	breaks the crucial functionality of graph words lookup.
-	It is not even possible 
+	Almende exploits this idea by <a href="http://visjs.org/examples/network/19_scale_free_graph_clustering.html">
+	clustering</a>. It basically collapses connected words into a group node.
+	See <a style="font-size:150%" href="javascript:redirect('almende-vis.html?mode=cluster')">
+	Clustered VisualDict</a> with clustered mode on. Almende 
+	 <a href="https://github.com/almende/vis/issues/696">
+	clusterting prevents navigating to specific words, though</a>. 
+	That is, we insert words into the graph and maintain the list
+	of inserted words to enable text lookup of the words. Clicking
+	a word in the list navigates to the word in the graph. If Almende collapses 
+	however the words into cluster, the words are removed from the 
+	graph and this crucial functionality is broken. It is not even possible 
 	to navigate to the word manually expanding the clusters --
 	you have no idea which cluster you need to open, likewise
 	you do not know which folder path to take to reach your goal 
 	file.
-	I therefore have an idea to add dynamic autoexpand/collapse 
-	(show/hide parts of the 
-	graph for the items you have selected to stay visible 
-	constantly) functionality on mouse hover, the way 
-	<a href="http://arborjs.org"> arborjs.org</a> 
+	<p>
+	I therefore have an idea to autoexpand nodes on (in place of) <a href="http://www.w3schools.com/tags/att_global_title.asp">
+	title/tooltip</a> event. You start with single node word, connected to expandable proxies/
+	placeholders. Once expanded, proxy is converted into normal nodes and
+	its connections show up as proxies. This way, you can unwind whole graph. 
+	Here is the demo, <a style="font-size:150%" href="javascript:redirect('almende-vis.html?mode=partial')">
+	Partial VisualDict</a>. It was easy to achieve with Almende fortunately supporting
+	the title events on the nodes. 	
+	This idea of incremental graph visualization is similar to <a href="http://arborjs.org"> arborjs.org</a> 
 	and <a href="http://maxdemarzi.com/2013/05/29/visualizing-the-news-with-vivagraph-js/">
-	VivaGraph (example below)</a> propose.
+	VivaGraph (example below)</a> proposals. However, in contrast with them, displayed nodes 
+	 persist and you need to reload the page for restart. 
 	<p>
 	Another planned feature is language differentiation (node color?). 
 	Currently, related words are
@@ -131,7 +136,7 @@
 	Supporting import of google-exported prasebook is required
 	for sure.
 	
-		<p>
+		<hr>
 	Unlike most graph models, current graph model avoids 
 	node/edge ids. Nodes are identified with words/labels. This 
 	complicates renaming and might inflate DB size. Yet, 
@@ -213,7 +218,7 @@
 	edges, unlike truly physical Almende's ribbons). This <a href="https://github.com/anvaka/VivaGraphJS/issues/86#issuecomment-73383520">
 	seems plainly impossible. Although, <a href="http://stackoverflow.com/questions/28373796">
 	asking this at Stackexchange is banned</a>. <a href="http://meta.stackoverflow.com/questions/285545">
-	As usually.</a>
+	As usually.</a> The issue is not that critical after incremental graph visualization.
 	<p>
 	GrphAlchemist on the other hand might be a great library 
 	but <a href="https://github.com/GraphAlchemist/Alchemy/issues/543">

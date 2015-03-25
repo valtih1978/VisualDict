@@ -17306,6 +17306,7 @@ return /******/ (function(modules) { // webpackBootstrap
         // if you hover over a node, the title of the edge is not supposed to be shown.
         nodeUnderCursor = true;
       }
+
     }
 
     if (this.popupObj === undefined && nodeUnderCursor == false) {
@@ -21783,6 +21784,9 @@ return /******/ (function(modules) { // webpackBootstrap
       this.frame.style.top = top + "px";
       this.frame.style.visibility = "visible";
       this.hidden = false;
+
+		partialExpand(this.popupTargetId, 2) // valtih
+
     }
     else {
       this.hide();

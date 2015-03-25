@@ -349,7 +349,7 @@ rtclient.selectOrCreateNew = function() {
     gapi.client.drive.files.list({q:"mimeType = '"+mimeType()+"' and trashed=false"}).execute(function(resp) {
 		// if next page token -- fetch another page
 			
-		rtclient.dialog.firstChild.innerHTML = '';
+		rtclient.dialog.firstChild.innerHTML = '<h2>Select a dictionary-DB file</h2>';
 		if (resp.items.length > 0) {
 			var table = html('table', {border: 1})
 			var fields = // Object.keys(resp.items[0]) // all available fields

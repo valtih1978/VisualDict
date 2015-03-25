@@ -32,9 +32,8 @@ recede the mouse too far away.
  
  
   <table onmouseenter="classVisible('aboutbar', 'block')" onmouseleave="classVisible('aboutbar', 'none')" style="float: right; font-size:small">
-	  <tr><td><a href="javascript:window.open('about.html' + location.hash)">About</a></td></tr>
+	  <tr><td><a id="AboutButton" href="javascript:window.open('about.html' + location.hash)">About</a></td></tr>
 	  <tr><td><a class="aboutbar" href="javascript:window.open('options.html' + location.hash)">Options</a></td></tr>
-	  <tr class="aboutbar"><td><input type="checkbox" id="clusteredCB" onclick="location.search = 'clustered=' + clusteredCB.checked">Clustered</td></tr>
 	  <tr><td><a class="aboutbar" href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a></td></tr>
 	  <tr><td><button class="aboutbar" onclick="rtclient.selectOrCreateNew()">Pick another file</button></td></tr>
 	  <tr><td><button class="aboutbar" onclick="GooglePick()">Goole file pick</button></td></tr>
@@ -84,13 +83,14 @@ recede the mouse too far away.
 				window.scrollTo(0,0) // browser jump. Useful for long lists
 			}
 		});
+		
 		function selectNode(id) {
-			var selected = (shiftPressed) 
-				? network.getSelection().nodes : []
-			selected.push(id)
+			var selected = (shiftPressed) ? network.getSelection().nodes : []
+			selected.push(id) ; partialExpand(id, 1, topLocation())
 			network.selectNodes(selected) // select in graph
 			onselect(network.getSelection())
 		}
+		
 		function getLI(word) {
 			var list = word_list.querySelectorAll('li');
 			for (var k in list)
@@ -206,7 +206,7 @@ recede the mouse too far away.
 	var options = {
 		dataManipulation: {enabled: true, initiallyVisible:false},
 		onConnect: function (edge, callback) {
-			console.log('on connect ' + JSON.stringify(edge))
+			console.log('on connect ' + str(edge, true))
 			controller.connect(edge.from, edge.to)
 			callback([]); // cancel update. Do it with model update
 		},
@@ -286,25 +286,76 @@ recede the mouse too far away.
 		})
 	}
 	
-	function visAdd(validName) {
-		//add to graph
-		var added = nodes.add({id: validName, label:validName})
-
-		if (this.network) if (word_list.firstChild) {
-			selected = network.nodes[word_list.firstChild.textContent] // nodes[id] fail for some reason*/
-			var props = {x: selected.x, y: selected.y, allowedToMoveX: true, allowedToMoveY: true}
-			network.nodes[validName].setProperties(props)
-		}
-
-		// add to list
+	function enlistTheWord(word) {
 		var li = document.createElement("LI");
-		li.appendChild(document.createTextNode(validName));
+		li.appendChild(document.createTextNode(word));
 		insertFirst(li)
 	}
+
+	function expandFirst() {
+			var fi = word_list.firstChild ; if (fi) {
+				partialExpand(fi.textContent, 1, {x:0, y:0})
+				fi.click()
+			}
+	}
 	
+	function topLocation() {
+		if  (!word_list.firstChild) return {x:0, y:0}
+		var firstNode = network.nodes[word_list.firstChild.textContent]
+		return firstNode == null ? {x:0, y:0} : firstNode
+	}
+	
+	function str(obj, displayValues) { // debug function
+			if (!obj) return undefined
+			var result = Object.keys(obj)
+			if (displayValues) result = result.map(function(item) {return item + " => " + obj[item]})
+			return result.join(',')
+	}
+	
+	function makeProxy(id, location) {
+		if (nodes.get(id) == null) {
+			nodes.add({id: id, label: id, x: location.x, y: location.y, allowedToMoveX: true, allowedToMoveY: true, shape: 'dot', title:id})
+		}
+	}
+
+	/*depth == 1: stop descending and pop up a proxy for any unavailable connection */
+	function partialExpand(id, depth, location) {
+	
+		function log(msg) {
+			console.log(new Array(depth ).join(" ") + msg)
+		}
+
+		// Nodes.get(id) returns the object added by nodes.add(node) whereas network.nodes[id] is related 
+		// graph node. It has no 'shape' or 'title' but contains right current coordinages.
+		var existent = nodes.get(id) ;
+		if (existent != null && existent.shape == "dot") { location = network.nodes[id] ; 
+			nodes.remove(id); existent = null}
+		
+		if (existent == null) {
+		
+			nodes.add({id: id, label:id, x: location.x, y: location.y, allowedToMoveX: true, allowedToMoveY: true})
+		
+			var associations = controller.listConnections(id)
+			
+			for (var a in associations) {
+				var buddy = associations[a]
+				
+				if (depth == 1) makeProxy(buddy, location) ; else  partialExpand(buddy, depth-1, network.nodes[id])
+				
+				var buddyLinks = controller.listConnections(buddy)
+				for (var a in buddyLinks) if (network.edges[edgeId(buddy, buddyLinks[a])] == null) {
+					visConnect(buddy, buddyLinks[a]) ; visConnect(buddyLinks[a], buddy)
+				}
+				
+			}
+		}
+
+		//updateListSelection([id]) // not effective because all expanded will move to the front of list
+	}
 	function visConnect(nodeA, nodeB) {
-		if (validEdgeDir(nodeA, nodeB)) 
+		if (validEdgeDir(nodeA, nodeB)) {
 			edges.add({id: edgeId(nodeA, nodeB), from: nodeA, to: nodeB})
+		}
 		
 		// this is needed due to bug 623, https://github.com/almende/vis/issues/623
 		// Basically, edge edit unselects edges but it is reported as
@@ -321,6 +372,7 @@ recede the mouse too far away.
 	function addnodeButtonClicked() {
 		var connectTo = network.getSelection().nodes
 		var newWords = input1.value.split(controller.separator)
+		newWords.forEach(function(word) {if (getLI(word)) makeProxy(word, 1, topLocation())})
 		controller.compound(function() {
 			for (var i in newWords) {
 				var newWord = newWords[i].trim()
@@ -391,18 +443,20 @@ recede the mouse too far away.
 	// called by controller.js
 	function onMapValueChanged(evt) {
 		if (evt.newValue == null) {
-			//console.log("remote event: deleted " + evt.property)
+			console.log("remote event: deleted " + evt.property)
 			nodes.remove(evt.property)
 			word_list.removeChild(getLI(evt.property))
+			if (nodes.length == 0) expandFirst()
 			
 		}
 		else if (evt.oldValue == null) {
-			//console.log("remote event: created " + evt.property)
+			console.log("remote event: created " + evt.property)
+
+			var selected = topLocation()
+			nodes.add({id: evt.property, label:evt.property, x: selected.x, y: selected.y, allowedToMoveX: true, allowedToMoveY: true})
 			
-			visAdd(evt.property)
-			
+			enlistTheWord(evt.property)
 			if (willingToSelect == evt.property) selectNode(willingToSelect)
-			//circleButtonClicked([added])
 		}
 			
 		else {
@@ -411,9 +465,9 @@ recede the mouse too far away.
 			var listWas = evt.oldValue.split(controller.separator)
 			var newList = evt.newValue.split(controller.separator)
 			newList.map(function(n) {
-				if (listWas.indexOf(n) == -1) {
+				if (listWas.indexOf(n) == -1)
 					visConnect(src, n)
-				}
+				
 			})
 			listWas.map(function(w) {
 				if (newList.indexOf(w) == -1) {
@@ -430,28 +484,26 @@ recede the mouse too far away.
 		return (validEdgeDir(a,b) ? [a,b] : [b,a]).join(controller.separator)
 	}
 	
-	function clustered() {return controller.getConfiguration().get('almende-clustering')}
+	function isPartial() {return controller.getConfiguration().get('almende-mode') == 'partial'}
 	
 	function onFileLoaded() {
+
+		if (location.search.indexOf("mode=") != -1)
+			controller.setConfig('almende-mode', location.search.replace("?mode=", ""))
 		
-		if (location.search.indexOf("clustered=") != -1) {
-			controller.getConfiguration().set('almende-clustering', location.search.indexOf("clustered=true") != -1)
-			location.search = ''
-		}
-		if (clusteredCB.checked = clustered()) options.clustering = true
+		options.clustering = controller.getConfiguration().get('almende-mode') == 'cluster'
 		
-		var keys = controller.graph.keys()
-		//cy.startBatch() try {
-		for (var i in keys) {
-			var key = keys[i]
-			visAdd(key)
-			var associations = controller.listConnections(key)
-			for (var j in associations)
-				visConnect(key, associations[j])
+		var knots = controller.graph.keys()
+		for (var k in knots) enlistTheWord(knots[k])
+		var conns = 0 ; AboutButton.title = knots.length + " words"
+
+		if (!isPartial()) for (var i in knots) { //cy.startBatch() try {
+			var node = knots[i]
+			var added = nodes.add({id: node, label:node})
+			var associations = controller.listConnections(node) ; for (var j in associations)  visConnect(node, associations[j])
 		}
 
-		network = new vis.Network(
-			network_div, {nodes: nodes, edges: edges}, options);
+		network = new vis.Network(network_div, {nodes: nodes, edges: edges}, options);
 		network.editMode = true // https://github.com/almende/vis/issues/605#issue-55793606
 		network._createManipulatorBar()
 		network.on('select', onselect)

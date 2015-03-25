@@ -123,8 +123,14 @@ function Controller() {
 	this.getConfiguration = function () {
 		return me.model.getRoot().get('configuration')
 	}
+	this.setConfig = function(name, value) {
+		if (me.getConfiguration().get(name) != value) {
+			console.log("config(" + name + ") changed " + me.getConfiguration().get(name) + " => " + value)
+			me.getConfiguration().set(name, value)
+		}
+	}
 
-	this.defaultConfig = {langs:{'default': 'blue'}, separator: ','}
+	this.defaultConfig = {langs:{'default': 'blue'}, separator: ',', 'almende-mode': 'partial'}
 	
 	this.start = function () {
 
