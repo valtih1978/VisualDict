@@ -103,6 +103,12 @@ function Controller() {
 
 	this.connect = function(a,b) {
 		a = validate(a, true) ; b = validate(b, true)
+		
+		// double connections dubious and create problems in renaming. 
+		// Renaming removes the connections, creates the node with new name and reconnects. It will try to connect to deleted, old name and fail. Do not permit the self-refs to happen at all.
+		if (a == b) return //throw new Error( "Cannot create self reference. Requested one for " + )
+			
+		
 		function half(a,b) {
 			var aValues = connectionSet(a)
 			aValues[b] = null // append an item into set: map to dummy value
@@ -148,20 +154,7 @@ function Controller() {
 			me.model = doc.getModel() ; me.separator = me.model.getRoot().get('configuration').get('separator')
 			me.graph = me.model.getRoot().get('graph');
 			
-			function _onMapValueChanged (evt) {
-			/*	//console.log("event = " + showAll(evt))
-				
-				// null => "" when created
-				// "something" => null when deleted
-				if (evt.newValue == null) console.log("remote event: deleted " + evt.property)
-				else if (evt.oldValue == null) console.log("remote event: created " + evt.property)
-				else console.log("remote event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)*/
-				
-				onMapValueChanged(evt)
-			}
-
-			me.graph.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED,
-				_onMapValueChanged);
+			me.graph.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, onMapValueChanged);
 			onFileLoaded(doc)
 		/*      textArea2.onkeyup = function() {
 			string.setText(textArea2.value);
