@@ -8,16 +8,16 @@ recede the mouse too far away.
 -->
 <body onLoad="controller = new Controller()">
   <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
-  <script type="text/javascript" src="/realtime-client-utils.js"></script>
-  <script type="text/javascript" src="/controller.js"></script>
+  <script type="text/javascript" src="realtime-client-utils.js"></script>
+  <script type="text/javascript" src="controller.js"></script>
 
-  <script src="/libs/vis.js"></script>
+  <script src="libs/vis.js"></script>
   <!--
   <script src="http://almende.github.io/vis/dist/vis.js"></script>
   -->
 <div id="network_div" style=""></div>
 
-<ul id="word_list" class="controls" style="float: left; width:50; height: 100; font-size: xx-small"></ul>
+<div style="float: left; width:50; height: 100; font-size: xx-small"><ul id="word_list" class="controls"></ul><hr><span id="Summary"></span></div>
 
 
 
@@ -32,7 +32,7 @@ recede the mouse too far away.
  
  
   <table onmouseenter="classVisible('aboutbar', 'block')" onmouseleave="classVisible('aboutbar', 'none')" style="float: right; font-size:small">
-	  <tr><td><a id="AboutButton" href="javascript:window.open('about.html' + location.hash)">About</a></td></tr>
+	  <tr><td><a href="javascript:window.open('about.html' + location.hash)">About</a></td></tr>
 	  <tr><td><a class="aboutbar" href="javascript:window.open('options.html' + location.hash)">Options</a></td></tr>
 	  <tr><td><a class="aboutbar" href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a></td></tr>
 	  <tr><td><button class="aboutbar" onclick="rtclient.selectOrCreateNew()">Pick another file</button></td></tr>
@@ -443,14 +443,14 @@ recede the mouse too far away.
 	// called by controller.js
 	function onMapValueChanged(evt) {
 		if (evt.newValue == null) {
-			console.log("remote event: deleted " + evt.property)
+			Summary.update(-1) ; console.log("remote event: deleted " + evt.property)
 			nodes.remove(evt.property)
 			word_list.removeChild(getLI(evt.property))
 			if (nodes.length == 0) expandFirst()
 			
 		}
 		else if (evt.oldValue == null) {
-			console.log("remote event: created " + evt.property)
+			Summary.update(+1) ; console.log("remote event: created " + evt.property)
 
 			var selected = topLocation()
 			nodes.add({id: evt.property, label:evt.property, x: selected.x, y: selected.y, allowedToMoveX: true, allowedToMoveY: true})
@@ -495,7 +495,8 @@ recede the mouse too far away.
 		
 		var knots = controller.graph.keys()
 		for (var k in knots) enlistTheWord(knots[k])
-		var conns = 0 ; AboutButton.title = knots.length + " words"
+		Summary.update=function(delta) {this.value += delta ; this.innerHTML = this.value + " words"}
+		Summary.value=0 ; Summary.update(knots.length)
 
 		if (!isPartial()) for (var i in knots) { //cy.startBatch() try {
 			var node = knots[i]
