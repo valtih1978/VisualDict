@@ -199,26 +199,25 @@
 		almende_vis</a> and <a href="alchemy.html">Graph Alchemist</a> 
 	address multiselect and stabilization in the examples: they
 	consuming CPU cycles) after a while. Almende network has 
-	strange multiselect behaviour: you must keep longer rather 
-	than shift-click (I have added click+shift). Adding nodes is 
-	<a href="view-source:http://almende.github.io/chap-links-library/js/network/examples/example12_adding_nodes.html">
-	more than terrible</a> though. It requireds creating intermediate 
-	tables. The funny thing is that mine network does not have any 
-	addNode(s)/addLink(s) methods! Yet, thanks to examples
-	<a href="http://almende.github.io/vis/examples/network/16_dynamic_data.html">
+	terrible multiselect behaviour: you must keep your finger on a node
+	to add it to selection. This is mobile-friendly but mine shift+click
+	is much more agile. Initially, I was also terrified with the <a href="view-source:http://almende.github.io/chap-links-library/js/network/examples/example12_adding_nodes.html">
+	API to add a node, which demanded creating intermediate tables
+	</a>. Yet, thanks to rich examples<a href="http://almende.github.io/vis/examples/network/16_dynamic_data.html">
 	(16 manual graph editor)</a> and <a href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">
 	(21 visual graph editor)</a>, I have realized how they achieved
-	that and using it as primary editor. 
+	that and started using it as primary editor.
 	<p>
-	Now however, I think that my graph is very large and I need
-	Vivagraph with its blazing WebGL performance. The stupid API
-	is not the issue (<a href="https://github.com/anvaka/VivaGraphJS/issues/121#issuecomment-71645340">I could add the API myself</a>)
+	As alternative, for large graphs I considered Vivagraph with its blazing WebGL 
+	performance. The stupid API	is not the issue (<a href="https://github.com/anvaka/VivaGraphJS/issues/121#issuecomment-71645340">I could add the API myself</a>)
 	The API is more complex than Almende for another reason: I see 
 	no way to render text nodes (let's ignore the ugly linear 
 	edges, unlike truly physical Almende's ribbons). This <a href="https://github.com/anvaka/VivaGraphJS/issues/86#issuecomment-73383520">
 	seems plainly impossible. Although, <a href="http://stackoverflow.com/questions/28373796">
 	asking this at Stackexchange is banned</a>. <a href="http://meta.stackoverflow.com/questions/285545">
-	As usually.</a> The issue is not that critical after incremental graph visualization.
+	As usually.</a> Furthermore, even if I will be able to draw the whole graph, 
+	it will be a mess on the screen. I therefore preferred the partial graph (or clustering) 
+	as primary solution.
 	<p>
 	GrphAlchemist on the other hand might be a great library 
 	but <a href="https://github.com/GraphAlchemist/Alchemy/issues/543">

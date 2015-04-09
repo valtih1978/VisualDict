@@ -354,6 +354,7 @@ recede the mouse too far away.
 	}
 	function visConnect(nodeA, nodeB) {
 		if (validEdgeDir(nodeA, nodeB)) {
+			makeProxy(nodeA, 1, topLocation()) ; makeProxy(nodeB, 1, topLocation())  
 			edges.add({id: edgeId(nodeA, nodeB), from: nodeA, to: nodeB})
 		}
 		
@@ -371,8 +372,7 @@ recede the mouse too far away.
 
 	function addnodeButtonClicked() {
 		var connectTo = network.getSelection().nodes
-		var newWords = input1.value.split(controller.separator)
-		newWords.forEach(function(word) {if (getLI(word)) makeProxy(word, 1, topLocation())})
+		var newWords = input1.value.split(controller.separator).map(function(word) {return word.trim()})
 		controller.compound(function() {
 			for (var i in newWords) {
 				var newWord = newWords[i].trim()
