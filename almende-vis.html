@@ -344,7 +344,7 @@ recede the mouse too far away.
 				
 				var buddyLinks = controller.listConnections(buddy)
 				for (var a in buddyLinks) if (network.edges[edgeId(buddy, buddyLinks[a])] == null) {
-					visConnect(buddy, buddyLinks[a]) ; visConnect(buddyLinks[a], buddy)
+					visConnect(buddy, buddyLinks[a], location) ; visConnect(buddyLinks[a], buddy, location)
 				}
 				
 			}
@@ -352,9 +352,11 @@ recede the mouse too far away.
 
 		//updateListSelection([id]) // not effective because all expanded will move to the front of list
 	}
-	function visConnect(nodeA, nodeB) {
+	
+	function visConnect(nodeA, nodeB, location) {
 		if (validEdgeDir(nodeA, nodeB)) {
-			makeProxy(nodeA, 1, topLocation()) ; makeProxy(nodeB, 1, topLocation())  
+			if (location) ; else location = topLocation()
+			makeProxy(nodeA, location) ; makeProxy(nodeB, location)
 			edges.add({id: edgeId(nodeA, nodeB), from: nodeA, to: nodeB})
 		}
 		
