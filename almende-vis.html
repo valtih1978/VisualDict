@@ -33,6 +33,7 @@ recede the mouse too far away.
  
   <table onmouseenter="classVisible('aboutbar', 'block')" onmouseleave="classVisible('aboutbar', 'none')" style="float: right; font-size:small">
 	  <tr><td><a href="javascript:window.open('about.html' + location.hash)">About</a></td></tr>
+	  <tr id=resetButton style="display:none"><td><a class="aboutbar" href="javascript:nodes.clear(); edges.clear();" title="Clean up the display. You can achieve the same with F5-page refresh but this button is faster and unloads the server.">Reset</a></td></tr>
 	  <tr><td><a class="aboutbar" href="javascript:window.open('options.html' + location.hash)">Options</a></td></tr>
 	  <tr><td><a class="aboutbar" href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a></td></tr>
 	  <tr><td><button class="aboutbar" onclick="rtclient.selectOrCreateNew()">Pick another file</button></td></tr>
@@ -47,11 +48,11 @@ recede the mouse too far away.
   </table >
   
   <table onmouseenter="classVisible('connbar', 'block')" onmouseleave="classVisible('connbar', 'none')" style="float: right">
-	<tr><td><button id="connect_button" onclick="connButtonClicked([])" disabled>conn strong</button></td></tr>
-	<tr><td><button class="connbar" id="circle_button" onclick="circleButtonClicked([])" disabled>circle conn</button></td></tr>
+	<tr><td><button id="connect_button" onclick="connButtonClicked([])" disabled>strong Conn</button></td></tr>
+	<tr><td><button class="connbar" id="circle_button" onclick="circleButtonClicked([])" disabled>circle Conn</button></td></tr>
 	<tr><td><button class="connbar" id="breakNodes_button" onclick="breakNodesClicked()" disabled title="Breaks connections between selected nodes">break</button></td></tr>
-	<tr><td><button class="connbar" id="delete_button" onclick="deleteButtonClicked()" disabled>Delete Selected</button></td></tr>
-	<tr><td><button class="connbar" id="flip_button" onclick="flipButtonClicked()" disabled>Flip Selected</button></td></tr>
+	<tr><td><button class="connbar" id="delete_button" onclick="deleteButtonClicked()" disabled>Del Sel</button></td></tr>
+	<tr><td><button class="connbar" id="flip_button" onclick="flipButtonClicked()" disabled>Flip Sel</button></td></tr>
   </table>
   <style>.connbar{display:none}</style>
   <table onmouseenter="classVisible('addbar', 'block')" onmouseleave="classVisible('addbar', 'none')" style="float: right">
@@ -508,7 +509,9 @@ recede the mouse too far away.
 			var node = knots[i]
 			var added = nodes.add({id: node, label:node})
 			var associations = controller.listConnections(node) ; for (var j in associations)  visConnect(node, associations[j])
-		}
+		} else
+			resetButton.style.display = 'block'
+
 
 		network = new vis.Network(network_div, {nodes: nodes, edges: edges}, options);
 		network.editMode = true // https://github.com/almende/vis/issues/605#issue-55793606
