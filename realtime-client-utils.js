@@ -110,8 +110,8 @@ rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
 
 	var handleAuthResult = function(authResult) {
 		function log(title) {
-			console.log('auth '+title+' = ' + Object.keys(authResult))
-			console.log(' error status = ' + Object.keys(authResult.status))
+			console.log('auth '+title+' = ' + JSON.stringify(authResult))//Object.keys(authResult))
+			console.log(' error status = ' + JSON.stringify(authResult.status))
 		}
 		if (authResult && !authResult.error) {
 			log("ok")

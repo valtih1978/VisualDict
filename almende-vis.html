@@ -32,12 +32,12 @@ recede the mouse too far away.
  
  
   <table onmouseenter="classVisible('aboutbar', 'block')" onmouseleave="classVisible('aboutbar', 'none')" style="float: right; font-size:small">
-	  <tr><td><a href="javascript:window.open('about.html' + location.hash)">About</a></td></tr>
-	  <tr id=resetButton style="display:none"><td><a class="aboutbar" href="javascript:nodes.clear(); edges.clear();" title="Clean up the display. You can achieve the same with F5-page refresh but this button is faster and unloads the server.">Reset</a></td></tr>
+	  <tr id=resetButton style="display:none"><td><a href="javascript:nodes.clear(); edges.clear();" title="Clean up the display. You can achieve the same with F5-page refresh but this button is faster and unloads the server.">Reset</a>&nbsp;&nbsp;&nbsp;</td></tr>
+	  <tr><td><a class="aboutbar" href="javascript:window.open('about.html' + location.hash)">About</a></td></tr>
 	  <tr><td><a class="aboutbar" href="javascript:window.open('options.html' + location.hash)">Options</a></td></tr>
 	  <tr><td><a class="aboutbar" href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a></td></tr>
-	  <tr><td><button class="aboutbar" onclick="rtclient.selectOrCreateNew()">Pick another file</button></td></tr>
-	  <tr><td><button class="aboutbar" onclick="GooglePick()">Goole file pick</button></td></tr>
+	  <tr><td><button class="aboutbar" onclick="rtclient.selectOrCreateNew()">Anthr file</button></td></tr>
+	  <tr><td><button class="aboutbar" onclick="GooglePick()">Ggl picker</button></td></tr>
   </table>
   <style>.aboutbar{display:none}</style>
   
@@ -58,8 +58,7 @@ recede the mouse too far away.
   <table onmouseenter="classVisible('addbar', 'block')" onmouseleave="classVisible('addbar', 'none')" style="float: right">
 	<tr><td><input id="input1" onkeydown="if (event.keyCode == 13) addnodeButtonClicked()"/></td></tr>
 	<tr><td><button class="addbar" id="add_button" onclick="addnodeButtonClicked()" style="display:none">add node</button></td></tr>
-	<tr><td><button class="addbar" id="rename_button" onclick="renameButtonClicked()" disabled style="display:none">Rename</button></td></tr>
-	<tr><td><button class="addbar" id="merge_button" onclick="mergeButtonClicked()" disabled style="display:none">merge</button></td></tr>
+	<tr><td><button class="addbar1" id="rename_button" onclick="renameButtonClicked()" style="display:none">Rename</button></td></tr>
   </table>
 
 	<script>
@@ -259,20 +258,14 @@ recede the mouse too far away.
 		console.log("selected.nodes: " + nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
 		delete_button.disabled = nodes.length + selected.edges.length == 0
 		connect_button.disabled = circle_button.disabled =
-			merge_button.disabled = (nodes.length < 2)
 		breakNodes_button.disabled = (nodes.length < 2)
 
-		rename_button.disabled = nodes.length != 1
+		rename_button.className = (nodes.length == 0) ? 'addbar1' : 'addbar' 
+		rename_button.innerHTML = (nodes.length < 2) ? 'Rename' : "Merge"
 		flip_button.disabled = (nodes.length != 2)
 		
 		// select item in the list
 		updateListSelection(nodes)
-	}
-	
-	function renameButtonClicked() {
-		var selected = network.getSelection().nodes
-		//nodes.update({id: selected[0], label:validName})
-		controller.renameNode(selected[0], willingToSelect = input1.value)
 	}
 	
 	function flipButtonClicked() {
@@ -405,7 +398,10 @@ recede the mouse too far away.
 		})
 	}
 	
-	function mergeButtonClicked() {
+	function renameButtonClicked() {
+
+		//controller.renameNode(selected[0], willingToSelect = input1.value)
+
 		var victims = network.getSelection().nodes
 		var target = willingToSelect = input1.value.trim()
 		controller.compound(function() {
@@ -422,6 +418,7 @@ recede the mouse too far away.
 				controller.deleteNode(victims[v])
 			}
 		})
+		onselect(network.getSelection())
 	}
 	
 	function breakNodesClicked() {
