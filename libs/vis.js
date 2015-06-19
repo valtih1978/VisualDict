@@ -21785,7 +21785,7 @@ return /******/ (function(modules) { // webpackBootstrap
       this.frame.style.visibility = "visible";
       this.hidden = false;
 
-		partialExpand(this.popupTargetId, 2) // valtih
+		console.log("hint " + this.popupTargetId + " caused partial expand"); partialExpand(this.popupTargetId, 2) // valtih
 
     }
     else {
