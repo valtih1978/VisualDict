@@ -312,7 +312,7 @@ recede the mouse too far away.
 		}
 	}
 
-	/*depth == 1: stop descending and pop up a proxy for any unavailable connection */
+	/*depth == 0: stop descending and pop up a proxy for any unavailable connection */
 	function partialExpand(id, depth, location) {
 	
 		function log(msg) {
@@ -334,11 +334,12 @@ recede the mouse too far away.
 			for (var a in associations) {
 				var buddy = associations[a]
 				
-				if (depth == 1) makeProxy(buddy, location) ; else  partialExpand(buddy, depth-1, network.nodes[id])
+				if (depth == 0) makeProxy(buddy, location) ; else  { partialExpand(buddy, depth-1, network.nodes[id])
 				
-				var buddyLinks = controller.listConnections(buddy)
-				for (var a in buddyLinks) if (network.edges[edgeId(buddy, buddyLinks[a])] == null) {
-					visConnect(buddy, buddyLinks[a], location) ; visConnect(buddyLinks[a], buddy, location)
+					var buddyLinks = controller.listConnections(buddy)
+					for (var a in buddyLinks) if (network.edges[edgeId(buddy, buddyLinks[a])] == null) {
+						visConnect(buddy, buddyLinks[a], location) ; visConnect(buddyLinks[a], buddy, location)
+					}
 				}
 				
 			}
