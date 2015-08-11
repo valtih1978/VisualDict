@@ -312,6 +312,11 @@ recede the mouse too far away.
 		}
 	}
 
+	function foreach(node, f) {
+		var links = controller.listConnections(node)
+		for (var l in links) f(links[l])
+	}
+			
 	/*depth == 0: stop descending and pop up a proxy for any unavailable connection */
 	function partialExpand(id, depth, location) {
 	
@@ -326,21 +331,19 @@ recede the mouse too far away.
 			nodes.remove(id); existent = null}
 		
 		if (existent == null) {
-		
-			nodes.add({id: id, label:id, x: location.x, y: location.y, allowedToMoveX: true, allowedToMoveY: true})
-		
-			var associations = controller.listConnections(id)
-			
-			for (var a in associations) {
-				var buddy = associations[a]
-				
-				if (depth == 0) makeProxy(buddy, location) ; else  { partialExpand(buddy, depth-1, network.nodes[id])
-				
-					var buddyLinks = controller.listConnections(buddy)
-					for (var a in buddyLinks) if (network.edges[edgeId(buddy, buddyLinks[a])] == null) {
-						visConnect(buddy, buddyLinks[a], location) ; visConnect(buddyLinks[a], buddy, location)
-					}
+			function join(buddy) {
+				if (network.edges[edgeId(id, buddy)] == null) {
+					visConnect(buddy, id, location) ; visConnect(id, buddy, location)
 				}
+			}
+			if (depth == 0) {
+				makeProxy(id, location)
+				foreach(id, function (buddy) {var node = nodes.get(buddy); if (node != null) join(buddy)})
+			} else  { 
+			
+				nodes.add({id: id, label:id, x: location.x, y: location.y, allowedToMoveX: true, allowedToMoveY: true})
+
+				foreach(id, function (buddy) { partialExpand(buddy, depth-1, network.nodes[id]) ; join(buddy)})
 				
 			}
 		}
@@ -411,11 +414,7 @@ recede the mouse too far away.
 			else controller.createNode(target) // if target existent -- create
 			console.log("replacing " + victims.join(",") + " with " + target)
 			for (var v in victims) {
-				var conns = controller.listConnections(victims[v])
-				for (var c in conns) {
-					if (victims.indexOf(conns[c]) == -1)
-						controller.connect(target, conns[c])
-				}
+				foreach(victims[v], function(buddy) {if (victims.indexOf(buddy) == -1) controller.connect(target, buddy)})
 				controller.deleteNode(victims[v])
 			}
 		})
