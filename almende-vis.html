@@ -17,7 +17,7 @@ recede the mouse too far away.
   -->
 <div id="network_div" style=""></div>
 
-<div style="float: left; width:50; height: 100; font-size: xx-small"><ul id="word_list" class="controls"></ul><hr><span id="Summary"></span></div>
+<div style="float: left; width:50; height: 100; font-size: xx-small"><ul id="word_list" class="controls" style="white-space:nowrap"></ul><hr><span id="Summary"></span></div>
 
 
 
@@ -72,8 +72,8 @@ recede the mouse too far away.
 		word_list.addEventListener("click", function(e) {
 			if(e.target && e.target.nodeName == "LI") {
 				//console.log(e.target.textContent + " was clicked");
-				selectNode(e.target.textContent)
-				network.focusOnNode(e.target.textContent, {
+				var text = e.target.textContent;
+				selectNode(text) ; network.focusOnNode(text, {
 					scale: 1, offset: {x:0,y:0},
 						animation: {
 							duration: 2500,
@@ -84,6 +84,8 @@ recede the mouse too far away.
 			}
 		});
 		
+		word_list.ondblclick = function(e) { input1.value = e.target.textContent}
+		
 		function selectNode(id) {
 			var selected = (shiftPressed) ? network.getSelection().nodes : []
 			selected.push(id) ; console.log("select node " + id + " caused partial expand"); partialExpand(id, 1, topLocation())
@@ -93,9 +95,9 @@ recede the mouse too far away.
 		
 		function getLI(word) {
 			var list = word_list.querySelectorAll('li');
-			for (var k in list)
-				if (list[k].textContent == word) 
-					return list[k]
+			for (var k in list) { li = list[k]
+				if (li.textContent == word) return li
+			}
 		}
 		
 		/* 
@@ -261,7 +263,7 @@ recede the mouse too far away.
 		breakNodes_button.disabled = (nodes.length < 2)
 
 		rename_button.className = (nodes.length == 0) ? 'addbar1' : 'addbar' 
-		rename_button.innerHTML = (nodes.length < 2) ? 'Rename' : "Merge"
+		rename_button.innerHTML = (nodes.length < 2) ? 'Rename' : "Merge " + nodes.length + " words"
 		flip_button.disabled = (nodes.length != 2)
 		
 		// select item in the list
@@ -523,7 +525,9 @@ recede the mouse too far away.
 			function squared(x) { return Math.pow(node[x] - network.areaCenter[x],2)}
 			return Math.pow(squared('x') + squared('y'), 1/2) < this.constants.clustering.activeAreaBoxSize/2/this.scale
 		}
+
 	}	
+	
     </script>
 
 </body>
