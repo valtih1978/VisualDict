@@ -335,7 +335,7 @@ rtclient.selectOrCreateNew = function() {
 		rtclient.dialog.firstChild.appendChild(el); 
 		if (text) el.appendChild(document.createTextNode(text));
 		return el
-	}
+	} ; var b = text => html("b", {}, text)
 	
 	html("h1", {}, "Fetching list of available files")
 	
@@ -346,7 +346,8 @@ rtclient.selectOrCreateNew = function() {
     gapi.client.drive.files.list({q:"mimeType = '"+mimeType()+"' and trashed=false"}).execute(function(resp) {
 		// if next page token -- fetch another page
 			
-		rtclient.dialog.firstChild.innerHTML = '<h2>Select a dictionary-DB file</h2>';
+		rtclient.dialog.firstChild.innerHTML = '<h2>Click a row to select a dictionary-DB file or create a new one</h2>'+
+			'Clicking the first name column will jump you to the file viewer<p>';
 		if (resp.items.length > 0) {
 			var table = html('table', {border: 1})
 			var fields = // Object.keys(resp.items[0]) // all available fields
@@ -356,18 +357,11 @@ rtclient.selectOrCreateNew = function() {
 				   tr.insertCell(fld).appendChild(document.createTextNode(fieldValue(field)));
 				} ; return tr
 			}
-			for (var ri in resp.items) {
-				var file = resp.items[ri]
-				var tr = row(function (field) { return file[field] })
-				tr.title = file.id ; tr.onclick = function() {
-					SelectedFileName.value = this.firstChild.textContent
-					SelectedFileId.value = this.title ; SelectFileButton.disabled = false
+			resp.items.forEach ( file => { var tr = row(field => file[field])
+				tr.onclick = function(e) { if (e.srcElement.cellIndex == 0 )
+					window.open('https://drive.google.com/open?id=' + file.id); else _this.redirectTo(file.id, true)
 				}
-			} ; row(function(field) {return field}) 
-			function b(text) {html("b", {}, text)} ; html("br", {})
-			b("File name: ") ; html("input", {id: 'SelectedFileName', disabled:true})
-			b(" File id: ") ; html("input", {id: 'SelectedFileId', disabled:true})
-			b(" ") ; var but1 = html("button", {id: 'SelectFileButton', disabled:true, onclick:function() {_this.redirectTo(SelectedFileId.value, true)}}, "Select") ; ; html("p", {}) ; 
+			}) ; row(field => field) ; html("br", {})
 		}
 		b("New file: ") ; html("input", {id: 'NewFileName', value: 'VisualDict-' + (resp.items.length+1)}) ; 
 		b(" ") ; html("button", {onclick: function() {createNew(NewFileName.value)}}, "Create") ; html("p", {})
