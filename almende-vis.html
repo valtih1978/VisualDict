@@ -62,12 +62,10 @@ recede the mouse too far away.
   </table>
 
 	<script>
-		function classVisible(cls, visibility) {
-			var controls = document.querySelectorAll("." + cls);
-			for (var k=0 ; k < controls.length; k++)
-				controls[k].style.display = visibility
-
-		}
+	
+		NodeList.prototype.forEach = Array.prototype.forEach // enable forEach in NodeList, http://stackoverflow.com/a/27649511/6267925
+		
+		function classVisible(cls, visibility) { document.querySelectorAll("." + cls).forEach(c => c.style.display = visibility) }
 		
 		word_list.addEventListener("click", function(e) {
 			if(e.target && e.target.nodeName == "LI") {
@@ -122,11 +120,7 @@ recede the mouse too far away.
 			else word_list.appendChild(li);
 		}
 		function updateListSelection(justSelected) {
-			for (k in justSelected) {
-				var li = getLI(justSelected[k])
-				word_list.removeChild(li)
-				insertFirst(li)
-			}
+			justSelected.map(getLI).forEach ( li => {word_list.removeChild(li) ; insertFirst(li)})
 		}
 
 	</script>
@@ -239,14 +233,8 @@ recede the mouse too far away.
 	// pruned on model update event.
 	options.onDelete = function(deleted, cb) {
 		controller.compound(function() {
-			for (var key in deleted.edges) {
-				console.log('deleting ' + deleted.edges[key])
-				controller.removeEdge(deleted.edges[key])
-			}
-			for (var key in deleted.nodes) {
-				console.log('deleting ' + deleted.nodes[key])
-				controller.deleteNode(deleted.nodes[key])
-			}
+			deleted.edges.forEach (edge => controller.removeEdge(edge) )
+			deleted.nodes.forEach (node => controller.deleteNode(node) )
 			return cb([]) // cancel delete -- do in on model update
 		})
 	}
@@ -275,11 +263,9 @@ recede the mouse too far away.
 		var name1 = selected[0] ; var name2 = selected[1]
 		//nodes.update({id: selected[0], label:validName})
 		var temp = "flipping_temp 1bf4e67deadad20cc14d"
-		controller.compound(function() {
-			controller.mergeRename([name1], temp)
-			controller.mergeRename([name2], name1)
-			controller.mergeRename([temp], name2)
-		})
+		with (controller) { compound(function() {
+			mergeRename([name1], temp) ; mergeRename([name2], name1) ; mergeRename([temp], name2)
+		})}
 	}
 	
 	function enlistTheWord(word) {
@@ -369,10 +355,11 @@ recede the mouse too far away.
 
 	}
 
+	function split(comma_separated) {return comma_separated.split(controller.separator)}
+
 	function addnodeButtonClicked() {
 		var connectTo = network.getSelection().nodes
-		var newWords = input1.value.split(controller.separator).map(function(word) {return word.trim()})
-		console.log('adding ' + newWords + " to " + connectTo)
+		var newWords = split(input1.value).map(function(word) {return word.trim()})
 		
 		controller.compound(function() {
 			
@@ -393,12 +380,11 @@ recede the mouse too far away.
 		})
 	}
 	
+	function cartesianForEach(col1, col2, pairfunc) {col1.forEach(i => col2.forEach(j => pairfunc(i,j))) }
+	
 	function connButtonClicked(plusAdded) {
 		var ids = network.getSelection().nodes.concat(plusAdded)
-		controller.compound(function() {
-			for (var i in ids) for (var j in ids)
-				controller.connect(ids[i], ids[j])
-		})
+		controller.compound( () => cartesianForEach(ids, ids, (i,j) => controller.connect(i,j)) )
 	}
 	
 	function renameButtonClicked() {
@@ -412,14 +398,10 @@ recede the mouse too far away.
 	}
 	
 	function breakNodesClicked() {
-		var nodes = network.getSelection().nodes
-		var victimEdges = []
-		for (var i in nodes) for (var j in nodes) {
-			var edge = edgeId(nodes[i], nodes[j])
-			if (edges.get(edge) != null && validEdgeDir(nodes[i], nodes[j]))
-				victimEdges.push(edge)
-		}
-		options.onDelete({edges:victimEdges}, function() {})
+		var nodes = network.getSelection().nodes ; var victimEdges = []
+		cartesianForEach(nodes, nodes, (i,j) => { var eid = edgeId(i,j)
+			if (edges.get(eid) != null && validEdgeDir(i,j)) victimEdges.push(eid)
+		}) ; options.onDelete({edges:victimEdges, nodes:[]}, function() {})
 	}
 	
 	// can be called due to delete-cancel of when user confirmes the edit
@@ -431,7 +413,7 @@ recede the mouse too far away.
 		var newEdge = ConnectMode_span.editorData
 		if (newEdge == null) return // no edit was actually started -- nothing to roll back
 		edges.remove(newEdge.id)
-		var originalConnection = newEdge.id.split(controller.separator)
+		var originalConnection = (newEdge.id)
 		visConnect(originalConnection[0], originalConnection[1])
 	}
 	
@@ -456,19 +438,9 @@ recede the mouse too far away.
 			
 		else {
 			console.log("remote event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)
-			var src = evt.property
-			var listWas = evt.oldValue.split(controller.separator)
-			var newList = evt.newValue.split(controller.separator)
-			newList.map(function(n) {
-				if (listWas.indexOf(n) == -1)
-					visConnect(src, n)
-				
-			})
-			listWas.map(function(w) {
-				if (newList.indexOf(w) == -1) {
-					edges.remove(edgeId(src, w))
-				}
-			});
+			var listWas = split(evt.oldValue) ; var newList = split(evt.newValue) ; var src = evt.property
+			newList.filter(n => listWas.indexOf(n) == -1).forEach(n => visConnect(src, n))
+			listWas.filter(w => newList.indexOf(w) == -1).forEach(w => edges.remove(edgeId(src, w))	);
 		}
 		
 	}
@@ -481,10 +453,10 @@ recede the mouse too far away.
 	
 	function isPartial() {return controller.getConfiguration().get('almende-mode') == 'partial'}
 	
-	function onFileLoaded() {
+	function onFileLoaded(doc) {
 
 		document.body.style.backgroundColor = 'white'
-		
+
 		controller.graph.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, onMapValueChanged);
 		undoButton.onclick = function(e) { controller.model.undo(); };
 		redoButton.onclick = function(e) { controller.model.redo(); };
@@ -504,17 +476,14 @@ recede the mouse too far away.
 		
 		options.clustering = controller.getConfiguration().get('almende-mode') == 'cluster'
 		
-		var knots = controller.graph.keys()
-		for (var k in knots) enlistTheWord(knots[k])
+		var knots = controller.graph.keys() ; knots.forEach(n => enlistTheWord(n))
 		Summary.update=function(delta) {this.value += delta ; this.innerHTML = this.value + " words"}
 		Summary.value=0 ; Summary.update(knots.length)
 
-		if (!isPartial()) for (var i in knots) { //cy.startBatch() try {
-			var node = knots[i]
-			var added = nodes.add({id: node, label:node})
-			var associations = controller.connectionSet(node) ; for (let assoc of associations) visConnect(node, assoc)
-		} else
-			resetButton.style.display = 'block'
+		if (!isPartial()) knots.forEach ( node => {//cy.startBatch() try {
+			nodes.add({id: node, label:node})
+			controller.connectionSet(node).forEach(assoc => visConnect(node, assoc))
+		}) ; else resetButton.style.display = 'block'
 
 
 		network = new vis.Network(network_div, {nodes: nodes, edges: edges}, options);
