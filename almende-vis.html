@@ -17,7 +17,8 @@ recede the mouse too far away.
   -->
 <div id="network_div" style=""></div>
 
-<div style="float: left; width:50; height: 100; font-size: xx-small"><ul id="word_list" class="controls" style="white-space:nowrap"></ul><hr><span id="Summary"></span></div>
+<div style="float: left; width:50; height: 100; font-size: xx-small; white-space:nowrap"><span id="Summary">I know this works in Chrome<br></span><hr>
+<ul id="word_list" class="controls"></ul></div>
 
 
 
@@ -355,7 +356,7 @@ recede the mouse too far away.
 
 	}
 
-	function split(comma_separated) {return comma_separated.split(controller.separator)}
+	function split(comma_separated) {return comma_separated.length == 0 ? [] : comma_separated.split(controller.separator)}
 
 	function addnodeButtonClicked() {
 		var connectTo = network.getSelection().nodes
@@ -420,15 +421,14 @@ recede the mouse too far away.
 	// called by controller.js
 	function onMapValueChanged(evt) {
 		if (evt.newValue == null) {
-			Summary.update(-1) ; console.log("remote event: deleted " + evt.property)
+			Summary.update(-1, -split(evt.oldValue).length) ; console.log("remote event: deleted " + evt.property)
 			nodes.remove(evt.property)
 			word_list.removeChild(getLI(evt.property))
 			if (nodes.length == 0) expandFirst()
 			
 		}
 		else if (evt.oldValue == null) {
-			Summary.update(+1) ; console.log("remote event: created " + evt.property)
-			console.log("remote event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)
+			Summary.update(+1, split(evt.newValue).length) ; console.log("remote event: created " + evt.property)
 			var selected = topLocation()
 			nodes.add({id: evt.property, label:evt.property, x: selected.x, y: selected.y, allowedToMoveX: true, allowedToMoveY: true})
 			
@@ -437,10 +437,9 @@ recede the mouse too far away.
 		}
 			
 		else {
-			console.log("remote event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)
 			var listWas = split(evt.oldValue) ; var newList = split(evt.newValue) ; var src = evt.property
-			newList.filter(n => listWas.indexOf(n) == -1).forEach(n => visConnect(src, n))
-			listWas.filter(w => newList.indexOf(w) == -1).forEach(w => edges.remove(edgeId(src, w))	);
+			let added = newList.filter(n => listWas.indexOf(n) == -1) ; let removed = listWas.filter(w => newList.indexOf(w) == -1)
+			Summary.update(0, added.length - removed.length) ; added.forEach(n => visConnect(src, n)) ; removed.forEach(w => edges.remove(edgeId(src, w))	);
 		}
 		
 	}
@@ -476,9 +475,11 @@ recede the mouse too far away.
 		
 		options.clustering = controller.getConfiguration().get('almende-mode') == 'cluster'
 		
-		var knots = controller.graph.keys() ; knots.forEach(n => enlistTheWord(n))
-		Summary.update=function(delta) {this.value += delta ; this.innerHTML = this.value + " words"}
-		Summary.value=0 ; Summary.update(knots.length)
+		Summary.nodes = Summary.edges = 0 ; let format =  x => x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+		Summary.update=function(nodeDiff, edgeDiff) {Summary.nodes += nodeDiff ; Summary.edges += edgeDiff
+			this.innerHTML = format(Summary.nodes) + " words and " +format(Summary.edges/2) + " transitions"} // div by 2 cos graph stores edges in both directions whereas we display only one
+		var knots = controller.graph.keys() ; knots.forEach(n => {enlistTheWord(n) ; Summary.edges += controller.connectionSet(n).size})
+		Summary.update(knots.length, 0)
 
 		if (!isPartial()) knots.forEach ( node => {//cy.startBatch() try {
 			nodes.add({id: node, label:node})
