@@ -75,7 +75,6 @@ function Controller(onFileLoaded) {
 	function updateConnections(node,updateFunc) {
 		var values = Array.from(updateFunc(me.connectionSet(node))).join(me.separator)
 		me.graph.set(node, values)
-
 	}
 
 	this.connectAll = function(node, conns) { for (let that of conns) me.connect(that, node) }
@@ -130,26 +129,13 @@ function Controller(onFileLoaded) {
 			me.graph = me.model.getRoot().get('graph');
 			
 			onFileLoaded(doc)
-		/*      textArea2.onkeyup = function() {
-			string.setText(textArea2.value);
-		  };*/
 
 		}
 		
-		var realtimeOptions = {
-		  // * Client ID from the console.
-		  clientId: '1088706429537-4oqhqr7o826ditbok23sll1rund1jim1.apps.googleusercontent.com',
-		   //* The ID of the button to click to authorize. Must be a DOM element ID.
-		  authButtonElementId: 'authorizeButton',
-		  initializeModel: initializeModel, // Function to be called when a Realtime model is first created.
-		  autoCreate: true, // Autocreate files right after auth automatically.
-		  onFileLoaded: _onFileLoaded, // Function to be called every time a Realtime file is loaded.
-		  registerTypes: null, // No action to inityalize custom Collaborative Objects types.
-		  afterAuth: null // No action after authorization and before loading files.
-		}
-
-		rtclient.loaderInst = new rtclient.RealtimeLoader(realtimeOptions);
-		rtclient.loaderInst.start();
+		new rtclient.RealtimeLoader({
+			initializeModel: initializeModel, // Function to be called when a Realtime model is first created.
+			onFileLoaded: _onFileLoaded, // Function to be called every time a Realtime file is loaded.
+		});
 	}
 	
 	this.start()
