@@ -37,8 +37,9 @@ recede the mouse too far away.
 	  <tr><td><a class="aboutbar" href="javascript:window.open('about.html' + location.hash)">About</a></td></tr>
 	  <tr><td><a class="aboutbar" href="javascript:window.open('options.html' + location.hash)">Options</a></td></tr>
 	  <tr><td><a class="aboutbar" href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a></td></tr>
-	  <tr><td><button class="aboutbar" onclick="rtclient.selectOrCreateNew()">Anothr file</button></td></tr>
-	  <tr><td><button class="aboutbar" onclick="GooglePick()">Ggl picker</button></td></tr>
+	  <tr><td><button class="aboutbar" onclick="controller.loader.selectOrCreateNew()">Anothr file</button></td></tr>
+	  <tr><td><button class="aboutbar" onclick="controller.loader.GooglePick()">Ggl picker</button></td></tr>
+	  <tr><td><a class="aboutbar" href="javascript:historicTrends()" target="_blank">Hist trend</a></td></tr>
   </table>
   <style>.aboutbar{display:none}</style>
   
@@ -450,7 +451,7 @@ recede the mouse too far away.
 		return (validEdgeDir(a,b) ? [a,b] : [b,a]).join(controller.separator)
 	}
 	
-	function isPartial() {return controller.getConfiguration().get('almende-mode') == 'partial'}
+	function isPartial() {return controller.getConfig('almende-mode') == 'partial'}
 	
 	function onFileLoaded(doc) {
 
@@ -473,7 +474,7 @@ recede the mouse too far away.
 		if (location.search.indexOf("mode=") != -1)
 			controller.setConfig('almende-mode', location.search.replace("?mode=", ""))
 		
-		options.clustering = controller.getConfiguration().get('almende-mode') == 'cluster'
+		options.clustering = controller.getConfig('almende-mode') == 'cluster'
 		
 		Summary.nodes = Summary.edges = 0 ; let format =  x => x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 		Summary.update=function(nodeDiff, edgeDiff) {Summary.nodes += nodeDiff ; Summary.edges += edgeDiff
@@ -501,7 +502,29 @@ recede the mouse too far away.
 		}
 
 	}	
-	
+
+	function historicTrends() { let dialog = document.createElement("div");
+		style(dialog, "position: fixed; left: 0px; top: 0px; width:100%; height:100%; z-index: 1000; background-color:white") // defined in realtime-client
+		function html(type, attributes, text) {
+			var el = document.createElement(type);
+			if (attributes) for (var a in attributes) el.setAttribute(a, attributes[a])
+			if (text) el.appendChild(document.createTextNode(text));
+			dialog.appendChild(el); return el
+		}; function escFunc(e) {if (e.keyCode == 27) close()} ; function close() {dialog.remove();
+			window.removeEventListener('keydown', escFunc)} ; window.addEventListener('keydown', escFunc)
+		html("b", {}, "Usage: Zoom: click-drag, Pan: shift-click-drag, Restore zoom level: double-click or ");
+		html('a', {href:"#"}, "Close").onclick=()=>close() ; html('div', {id:"div_g", style:"width:100%"})
+
+		var script = document.createElement('script'); script.src = 'http://dygraphs.com/dygraph-combined.js';
+
+		script.onload = function () {
+			Dygraph.addEvent(document, "mousewheel", function() { lastClickedGraph = null; });
+			Dygraph.addEvent(document, "click", function() { lastClickedGraph = null; });
+			let data = controller.trends.asArray().map(( [ms, sample])=> [new Date(ms), ...sample])
+			new Dygraph(document.getElementById("div_g"), data,{labels: [ "Date", "nodes", "edges" ]});
+		};
+		document.body.appendChild(dialog); document.head.appendChild(script);
+	}
     </script>
 
 </body>

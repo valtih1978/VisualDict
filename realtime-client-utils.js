@@ -16,14 +16,15 @@ function mimeType() {
 	return rtclient.REALTIME_MIMETYPE + "." + rtclient.clientId.split('-')[0]
 }
 
+function style(el, value) {
+	var value = value.split(";") ; for (var s in value) {
+		var pair = value[s].split(":") ; el.style[pair[0].trim()] = pair[1].trim()
+	}
+}
+
 rtclient.dialog = (function() {
 	var dialog = document.createElement("div"); dialog.id = "rtclient_file_picker_dialog"
 	// el.style = // has no effect
-	function style(el, value) {
-		var value = value.split(";") ; for (var s in value) { 
-			var pair = value[s].split(":") ; el.style[pair[0].trim()] = pair[1].trim()
-		}
-	}
 	style(dialog, "visibility: hidden; position: fixed; left: 0px; top: 0px; width:100%; height:100%; z-index: 1000")
 	var content = document.createElement("div"); content.id = "rtclient_file_picker_content"
 	style(content, "height:100%; background:white; margin:0 auto; overflow:auto") ; dialog.appendChild(content)
@@ -59,8 +60,8 @@ rtclient.params = rtclient.getParams();
  * @param defaultValue {Object} default option value (optional).
  */
 
-rtclient.Authorizer = function(onAuthComplete) { var _this = this; 
-  gapi.load('auth:client,drive-realtime', function() { _this.authorize(onAuthComplete)});
+rtclient.Authorizer = function(onAuthComplete) { var me = this; 
+  gapi.load('auth:client,drive-realtime', function() { me.authorize(onAuthComplete)});
 }
 
 /**
@@ -77,7 +78,7 @@ rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
 		let ab = rtclient.authButton()
 		if (authResult && !authResult.error) { log("ok")
 			ab.style.display = 'none'; //_this.fetchUserId(onAuthComplete);
-		  onAuthComplete()
+		  console.log('Authorized'); onAuthComplete()
 		} else { log("error")
 		  ab.style.display = 'block'; ab.onclick = function() {authorize(true)};
 		}
@@ -156,25 +157,25 @@ rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
 rtclient.parseState = function(stateParam) { try { return JSON.parse(stateParam) } catch(e) { return null } }
 rtclient.authorizer = null // loaders will use this authorizer. We going to have multiple loaders how share a single authorizer.
 
-rtclient.RealtimeLoader = function(options) { this.options = options
+rtclient.RealtimeLoader = function(options) { this.options = options; me = this
 
-	if (!rtclient.authorizer) rtclient.authorizer = new rtclient.Authorizer(() => {
+	function decideWhatToLoadWhenAuthorized() {
 		
 		var [fileId, state] = ['fileId', 'state'].map(key => rtclient.params[key])
 
-		console.log("Authorized. Deciding what to load with rclient.params=" + Object.keys(rtclient.params) + "")
+		console.log("Deciding what to load with rclient.params=" + JSON.stringify(rtclient.params) + "")
 		// We have file IDs in the query parameters, so we will use them to load a file.
-		if (fileId) return this.loadFile(fileId)
+		if (fileId) return me.loadFile(fileId)
 
 		// We have a state parameter being redirected from the Drive UI. We will parse
 		// it and redirect to the fileId contained.
 		else if (state) { // If opening a file from Drive
 			var stateObj = rtclient.parseState(state);
-			if (stateObj.action == "open") return this.redirectTo(stateObj.ids[0]);
+			if (stateObj.action == "open") return me.redirectTo(stateObj.ids[0]);
 		}
-		if (this.initializeModel) rtclient.selectOrCreateNew()
+		if (me.options.initializeModel) me.selectOrCreateNew()
 		else throw new Error("We do not have the document Id")
-	});
+	} ; if (!rtclient.authorizer) rtclient.authorizer = new rtclient.Authorizer(decideWhatToLoadWhenAuthorized); else decideWhatToLoadWhenAuthorized()
 } //Handles authorizing, parsing query parameters, loading and creating Realtime documents.
 
 /**
@@ -214,9 +215,9 @@ rtclient.RealtimeLoader.prototype.loadFile = function(fileId) {
 }
 
 // No fileId or state have been passed. We create a new Realtime file and redirect to the URL to load it.
-rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() {
+rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
   
-  this.dialog.style.visibility = 'visible'
+	rtclient.dialog.style.visibility = 'visible'
 	
 	function html(type, attributes, text) {
 		var el = document.createElement(type);
@@ -248,7 +249,7 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() {
 			}
 			resp.items.forEach ( file => { var tr = row(field => file[field])
 				tr.onclick = function(e) { if (e.srcElement.cellIndex == 0 )
-					window.open('https://drive.google.com/open?id=' + file.id); else _this.redirectTo(file.id, true)
+					window.open('https://drive.google.com/open?id=' + file.id); else me.redirectTo(file.id, true)
 				}
 			}) ; row(field => field) ; html("br", {})
 		}
@@ -269,7 +270,7 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() {
 				}).execute(function(file) {
 					if (file.id) {
 						console.log("after " + fname + " created with mime "+rtclient.REALTIME_MIMETYPE+" created, redirect file:" + file.id)
-					  this.redirectTo(file.id, true);
+					  me.redirectTo(file.id, true);
 					}
 					// File failed to be created, log why and do not attempt to redirect.
 					else {
@@ -287,7 +288,7 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() {
 }
 
 
-rtclient.RealtimeLoader.prototype.GooglePick = function() {
+rtclient.RealtimeLoader.prototype.GooglePick = function() { var me = this
 	function main() {
 		var token = gapi.auth.getToken().access_token;
 		var view = new google.picker.View(google.picker.ViewId.DOCS);
@@ -300,7 +301,7 @@ rtclient.RealtimeLoader.prototype.GooglePick = function() {
 		  .addView(view)
 		  //.setDeveloperKey(apiKey)
 		  //.addView(new google.picker.DocsUploadView())
-		  .setCallback(function(resp){if (resp.action == 'picked') this.redirectTo(resp.docs[0].id, true);})
+		  .setCallback(function(resp){if (resp.action == 'picked') me.redirectTo(resp.docs[0].id, true);})
 		  .build();
 		picker.setVisible(true);
 	}

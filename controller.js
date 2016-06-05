@@ -102,15 +102,15 @@ function Controller(onFileLoaded) {
 
 	this.getConfiguration = function () {
 		return me.model.getRoot().get('configuration')
-	}
+	} ; this.getConfig = function(option) {return this.getConfiguration().get(option)}
 	this.setConfig = function(name, value) {
-		if (me.getConfiguration().get(name) != value) {
+		if (me.getConfig(name) != value) {
 			console.log("config(" + name + ") changed " + me.getConfiguration().get(name) + " => " + value)
 			me.getConfiguration().set(name, value)
 		}
 	}
 
-	this.defaultConfig = {langs:{'default': 'blue'}, separator: ',', 'almende-mode': 'partial'}
+	this.defaultConfig = {langs:{'default': 'blue'}, separator: ',', 'almende-mode': 'partial', trendsUpdatesPerDay: 10 }
 	
 	this.start = function () {
 
@@ -120,6 +120,7 @@ function Controller(onFileLoaded) {
 			}
 			append('configuration', me.defaultConfig)
 			append('graph', {a:"b,c", b:"a,d", c:"a,d",d:"c,b,1", "1":"d"})
+			model.getRoot().set('trends', model.createList());
 		}
 		
 		var loaded = false
@@ -130,14 +131,35 @@ function Controller(onFileLoaded) {
 			
 			onFileLoaded(doc)
 
+			//a second connection is needed is needed to prevent confusion between graph and option/history updates, which would mess into graph Undo
+			new rtclient.RealtimeLoader({onFileLoaded: onAuxillaryDocLoaded})
 		}
 		
-		new rtclient.RealtimeLoader({
+		me.loader = new rtclient.RealtimeLoader({
 			initializeModel: initializeModel, // Function to be called when a Realtime model is first created.
 			onFileLoaded: _onFileLoaded, // Function to be called every time a Realtime file is loaded.
 		});
 	}
 	
+	function onAuxillaryDocLoaded(doc) {
+		function getStat() {// we could actually take this info from the almende file, since it keeps track of the stats
+			let es = 0; let keys = me.graph.keys() ; keys.forEach(n =>  es += me.connectionSet(n).size) ; return [keys.length, es/2]
+		} ; function getLasttrendsRecord(offset) {return trends.get(trends.length-1)[offset]} // offset 0: time stamp, 1: nodes-edges value
+		//me.model.getRoot().set('trends', me.model.createList());
+		//me.getConfiguration().set('trendsUpdatesPerDay', 24 * 3600)
+		me.trends = doc.getModel().getRoot().get('trends') ; let trends = me.trends
+		function setNextTrendsTimer(wasTimeMs) { let nextTime = wasTimeMs + 24 * 3600 / me.getConfig('trendsUpdatesPerDay') * 1000
+			let timeToEvent = Math.max(nextTime - Date.now(), 0) //; console.log('next trends record after ' + (timeToEvent/1000) + " sec")
+			function timeoutFunc() {let newStat = getStat() ; let statWas = getLasttrendsRecord(1)
+				if (newStat.every((v,i) => v == statWas[i])) setNextTrendsTimer(Date.now()); else makeTrendsRecord(newStat)
+			}
+			setTimeout(timeoutFunc, timeToEvent)
+		} ; function makeTrendsRecord(statsToRecord) { let curTimeMs = Date.now() // milliseconds since 1970
+			trends.push([curTimeMs, statsToRecord]) ; setNextTrendsTimer(curTimeMs)
+			console.log("added " + trends.length + "th trend " + statsToRecord)
+		} ; if (trends.length == 0) makeTrendsRecord(getStat()); else setNextTrendsTimer(getLasttrendsRecord(0))
+	}
+
 	this.start()
 }
 
