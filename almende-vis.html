@@ -62,6 +62,10 @@ recede the mouse too far away.
 	<tr><td><button class="addbar" id="add_button" onclick="addnodeButtonClicked()" style="display:none">add node</button></td></tr>
 	<tr><td><button class="addbar1" id="rename_button" onclick="renameButtonClicked()" style="display:none">Rename</button></td></tr>
   </table>
+  <table style="float: right">
+	<tr><td><b id="saving1" style="display:none">Saving... </b></td></tr	>
+  </table>
+  
 
 	<script>
 	
@@ -453,9 +457,16 @@ recede the mouse too far away.
 	
 	function isPartial() {return controller.getConfig('almende-mode') == 'partial'}
 	
+	window.onbeforeunload = function (e) {if (saving1.style.display != 'none') return "There are some data unsaved. Are you sure that you want to terminate?"}
+	
 	function onFileLoaded(doc) {
 
 		document.body.style.backgroundColor = 'white'
+		doc.addEventListener(gapi.drive.realtime.EventType.DOCUMENT_SAVE_STATE_CHANGED, function(e) {
+			//document.body.style.backgroundColor = (saving = e.isSaving) ? 'ligthyellow' : 'white'
+			saving1.style.display = (e.isSaving) ? 'inline' : 'none'
+			input1.style.color = (e.isSaving) ? 'red' : 'black'
+		});
 
 		controller.graph.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, onMapValueChanged);
 		undoButton.onclick = function(e) { controller.model.undo(); };

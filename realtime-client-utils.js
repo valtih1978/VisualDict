@@ -104,7 +104,9 @@ rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
   
   authorize(false)
   
-  setInterval(function() {authorize(false)}, 1800000); // refresh interval 1800000 = 30 min
+  // refresh interval 1800000 = 30 min. Reauthorizing with this code helped me when connection was bad and re-authorizatiion unreliable.
+  // But, once authorizer was corrected and unsaved indicator introduced, I think that this is not needed anymore.
+  //setInterval(function() {authorize(false)}, 1800000);
 }
 
 
@@ -175,7 +177,7 @@ rtclient.RealtimeLoader = function(options) { this.options = options; me = this
 		}
 		if (me.options.initializeModel) me.selectOrCreateNew()
 		else throw new Error("We do not have the document Id")
-	} ; if (!rtclient.authorizer) rtclient.authorizer = new rtclient.Authorizer(decideWhatToLoadWhenAuthorized); else decideWhatToLoadWhenAuthorized()
+	} ; (rtclient.authorizer ? f => f() : f => rtclient.authorizer = new rtclient.Authorizer(f)) (decideWhatToLoadWhenAuthorized)
 } //Handles authorizing, parsing query parameters, loading and creating Realtime documents.
 
 /**
@@ -204,10 +206,10 @@ rtclient.RealtimeLoader.prototype.loadFile = function(fileId) {
 	console.log('loading ' + fileId)
 	
 	function handleErrors(e) { with(gapi.drive.realtime.ErrorType) {switch(e.type) {
-		case TOKEN_REFRESH_REQUIRED: rtclient.authorizer.authorize()
-		case CLIENT_ERROR: {throw e ; window.location.href= "/";}
-		case NOT_FOUND: {alert("The file was not found. It does not exist or you do not have read access to the file.");
-			window.location.href= "/";}
+		case TOKEN_REFRESH_REQUIRED: rtclient.authorizer.authorize() ; break
+		case CLIENT_ERROR: throw e ; window.location.href= "/"; break
+		case NOT_FOUND: alert("The file was not found. It does not exist or you do not have read access to the file.");
+			window.location.href= "/"; break
 		default: throw new Error(e)
 	}}}
 
@@ -235,7 +237,6 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
 	// Pick file automatically if one already exists
     gapi.client.drive.files.list({q:"mimeType = '"+mimeType()+"' and trashed=false"}).execute(function(resp) {
 		// if next page token -- fetch another page
-			
 		rtclient.dialog.firstChild.innerHTML = '<h2>Click a row to select a dictionary-DB file or create a new one</h2>'+
 			'Clicking the first name column will jump you to the file viewer<p>';
 		if (resp.items.length > 0) {

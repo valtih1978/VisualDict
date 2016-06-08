@@ -123,9 +123,8 @@ function Controller(onFileLoaded) {
 			model.getRoot().set('trends', model.createList());
 		}
 		
-		var loaded = false
 		function _onFileLoaded(doc) {
-			if (loaded) return ; loaded = true // re-load happens on token refresh
+
 			me.model = doc.getModel() ; me.separator = me.model.getRoot().get('configuration').get('separator')
 			me.graph = me.model.getRoot().get('graph');
 			
