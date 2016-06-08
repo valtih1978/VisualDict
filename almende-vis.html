@@ -74,20 +74,13 @@ recede the mouse too far away.
 		function classVisible(cls, visibility) { document.querySelectorAll("." + cls).forEach(c => c.style.display = visibility) }
 		
 		word_list.addEventListener("click", function(e) {
-			if(e.target && e.target.nodeName == "LI") {
-				//console.log(e.target.textContent + " was clicked");
-				var text = e.target.textContent;
+			if(e.target && e.target.nodeName == "LI") { ; var text = e.target.textContent
 				selectNode(text) ; network.focusOnNode(text, {
-					scale: 1, offset: {x:0,y:0},
-						animation: {
-							duration: 2500,
-							easingFunction: 'easeInOutQuad'
-						}
-				})
-				window.scrollTo(0,0) // browser jump. Useful for long lists
+					scale: 1, offset: {x:0,y:0}, animation: {duration: 2500, easingFunction: 'easeInOutQuad'}
+				}) ; window.scrollTo(0,0) // browser jump. Useful for long lists
 			}
 		});
-		
+
 		word_list.ondblclick = function(e) { input1.value = e.target.textContent}
 		
 		function selectNode(id) {
@@ -104,23 +97,6 @@ recede the mouse too far away.
 			}
 		}
 		
-		/* 
-		// highlight selected words in list
-		var listSelected = []
-		function updateListSelection(justSelected) {
-			for (var k in listSelected) {
-				listSelected[k].style['font-size'] = "xx-small"
-				listSelected[k].style['font-weight'] = "normal"
-			}
-			listSelected = []
-			
-			for (k in justSelected) {
-				var li = getLI(justSelected[k]) 
-				li.style['font-size'] = "large"
-				li.style['font-weight'] = "bold"
-				listSelected.push(li)
-			}
-		}*/
 		function insertFirst(li) {
 			if (word_list.firstChild) word_list.insertBefore(li, word_list.firstChild);
 			else word_list.appendChild(li);
@@ -153,12 +129,10 @@ recede the mouse too far away.
 	var shiftPressed = undefined ; 
 	
 	function installKeyListener() {["keydown", "keyup"].forEach(evt =>
-		window.addEventListener(evt, function(event) {
+		window.addEventListener(evt, function(event) { shiftPressed = event.shiftKey
 			// Bind to both command (for Mac) and control (for Win/Linux)
-			shiftPressed = event.shiftKey
 			if (event.keyCode == 17) {
-				var down = event.type == 'keydown'
-				var newDisplay = down ? 'block' : 'none'
+				var down = event.type == 'keydown' ; var newDisplay = down ? 'block' : 'none'
 				if (ConnectMode_span.style.display != newDisplay) {
 
 					ConnectMode_span.style.display = newDisplay
@@ -169,20 +143,15 @@ recede the mouse too far away.
 						if (down) {
 							ConnectMode_span.editorData = null
 							network._createEditEdgeToolbar.call(network)
-						}
-						else {
+						} else {
 							network._createManipulatorBar.call(network)
 							recoverEditEdge()
 							var newEdge = ConnectMode_span.editorData
-							if (newEdge != null) {
-								controller.compound(function() {
-									controller.removeEdge(newEdge.id)
-									controller.connect(newEdge.from, newEdge.to)
-								})
-							}
+							if (newEdge != null) { controller.compound(function() {
+								controller.removeEdge(newEdge.id)
+								controller.connect(newEdge.from, newEdge.to)
+							})}
 						}
-
-
 					} else {
 						// new connection mode
 						console.log('new conn mode')
