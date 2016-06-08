@@ -23,7 +23,7 @@ recede the mouse too far away.
 
 
 
-<table cellspacing="0" cellpadding="0" id="authorizeButton"> <tr> 
+<table cellspacing="0" cellpadding="0" id="authorizeButton" style="display:none"><tr>
 <td align="center" width="300" height="40" bgcolor="#000091" style="-webkit-border-radius: 5px; -moz-border-radius: 5px; border-radius: 5px; color: #ffffff; display: block;">
 <a href="javascript:" style="font-size:16px; font-weight: bold; font-family: Helvetica, Arial, sans-serif; text-decoration: none; line-height:40px; width:100%; display:inline-block"><span style="color: #FFFFFF">You must authorize</span></a>
 </td> 
@@ -152,7 +152,7 @@ recede the mouse too far away.
 	
 	var shiftPressed = undefined ; 
 	
-	["keydown", "keyup"].map(function(evt) {
+	function installKeyListener() {["keydown", "keyup"].forEach(evt =>
 		window.addEventListener(evt, function(event) {
 			// Bind to both command (for Mac) and control (for Win/Linux)
 			shiftPressed = event.shiftKey
@@ -201,8 +201,8 @@ recede the mouse too far away.
 				network._createManipulatorBar.call(network)
 				ConnectMode_span.style.display = 'none'
 			}
-		}, true);
-	})
+		}, true)
+	)}
 	
 
 	var options = {
@@ -461,6 +461,7 @@ recede the mouse too far away.
 	
 	function onFileLoaded(doc) {
 
+		installKeyListener()
 		document.body.style.backgroundColor = 'white'
 		doc.addEventListener(gapi.drive.realtime.EventType.DOCUMENT_SAVE_STATE_CHANGED, function(e) {
 			//document.body.style.backgroundColor = (saving = e.isSaving) ? 'ligthyellow' : 'white'

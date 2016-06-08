@@ -60,7 +60,9 @@ rtclient.params = rtclient.getParams();
  * @param defaultValue {Object} default option value (optional).
  */
 
+function summarize(msg) {if (typeof Summary != "undefined") Summary.innerHTML += msg + "<br>"; else console.log(msg)}
 rtclient.Authorizer = function(onAuthComplete) { var me = this; 
+	summarize('Loading Auth,drive-realtime API')
   gapi.load('auth:client,drive-realtime', function() { me.authorize(onAuthComplete)});
 }
 
@@ -68,6 +70,7 @@ rtclient.Authorizer = function(onAuthComplete) { var me = this;
  * Reauthorize the client with no callback (used for authorization failure).
  * @param onAuthComplete {Function} to call once authorization has completed.
  */
+
 rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
 
 	var handleAuthResult = function(authResult) {
@@ -78,7 +81,8 @@ rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
 		let ab = rtclient.authButton()
 		if (authResult && !authResult.error) { log("ok")
 			ab.style.display = 'none'; //_this.fetchUserId(onAuthComplete);
-		  console.log('Authorized'); onAuthComplete()
+			summarize('Authorized, ' + (onAuthComplete ? 'has to load some file' : 'has nothing else to do') );
+		  if (onAuthComplete) onAuthComplete()
 		} else { log("error")
 		  ab.style.display = 'block'; ab.onclick = function() {authorize(true)};
 		}
@@ -87,7 +91,7 @@ rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
   function auth(access) { return "https://www.googleapis.com/auth/drive." + access }
 
   function authorize(popup) {
-	console.log('authorizing '  + popup)
+	summarize(`Authorizing(${popup})`)
     gapi.auth.authorize({
       client_id: rtclient.clientId,
       scope: [
@@ -203,7 +207,7 @@ rtclient.RealtimeLoader.prototype.redirectTo = function(fileId, reload) {
 }
 
 rtclient.RealtimeLoader.prototype.loadFile = function(fileId) {
-	console.log('loading ' + fileId)
+	if (!controller.graph) summarize('Loading your realtime file') // display only on first load
 	
 	function handleErrors(e) { with(gapi.drive.realtime.ErrorType) {switch(e.type) {
 		case TOKEN_REFRESH_REQUIRED: rtclient.authorizer.authorize() ; break
@@ -230,10 +234,10 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
 	} ; var b = text => html("b", {}, text)
 	
 	html("h1", {}, "Fetching list of available files")
-	
+	summarize("Loading drive API v2")
     gapi.client.load('drive', 'v2', function() {
 	
-	
+	summarize("Loading file list")
 	// Pick file automatically if one already exists
     gapi.client.drive.files.list({q:"mimeType = '"+mimeType()+"' and trashed=false"}).execute(function(resp) {
 		// if next page token -- fetch another page
