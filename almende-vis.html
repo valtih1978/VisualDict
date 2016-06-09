@@ -446,7 +446,7 @@ recede the mouse too far away.
 		var onUndoRedoStateChanged = function(e) {
 			undoButton.disabled = !e.canUndo;
 			redoButton.disabled = !e.canRedo;
-		};
+		}; document.querySelectorAll("button").forEach(b => b.addEventListener("click", () => input1.focus()))
 		controller.model.addEventListener(gapi.drive.realtime.EventType.UNDO_REDO_STATE_CHANGED, onUndoRedoStateChanged);
 		  
 
