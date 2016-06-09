@@ -1,5 +1,5 @@
 
-function Controller() {
+function Controller(onFileLoaded) {
 
 	var me = this
 	
@@ -10,32 +10,19 @@ function Controller() {
 		name = name.trim()
 		if (name.indexOf(me.separator) != -1) throw new Error( "Separator is forbidden in the words")
 		if (name.length == 0) throw new Error("Name must be not empty")
-		if (mustExist != (me.graph.get(name) != null)) throw new Error("node `" + name + (mustExist ? ' must exist' : ' must not exist' ))
+		if (mustExist != undefined && mustExist != (me.graph.get(name) != null))
+			throw new Error("node `" + name + (mustExist ? ' must exist' : ' must not exist' ))
 		return name
 	}
 	
-	createNodeNameChecked = function(name) {
-		me.graph.set(name, "");
+	this.createNode = function(name, conns) { name = validate(name)
+		if (me.graph.get(name) == null) me.graph.set(name, "")
+		me.connectAll(name, conns) ; return name
 	}
 	
-	this.createNode = function(name) {
-		name = validate(name, false)
-		createNodeNameChecked(name)
-		return name
-	}
-	
-	this.listConnections = function(key) {
+	this.connectionSet = function(key) {
 		var str = me.graph.get(key)
-		return (str == "") ? [] : str.split(me.separator)
-	}
-
-	connectionSet = function (key) {
-		var list = me.listConnections(key)
-		var dict = {}
-		for (i in list) {
-			dict[list[i]] = null // dummy value
-		}
-		return dict
+		return new Set((str == "") ? [] : str.split(me.separator))
 	}
 
 	this.compound = function(action) {
@@ -47,17 +34,12 @@ function Controller() {
 		}
 	}
 	
-	
-	this.renameNode = function(aname, bname) {
-		var newName = validate(bname, false)
+	this.mergeRename = function(toMerge, target) {
+		var target = validate(target)
 		return me.compound(function() {
-			var deleted = me.deleteNode(aname)
-			var mustConnectTo = deleted.connectedTo
-			console.log("deleted connections with " + mustConnectTo)
-			createNodeNameChecked(newName)
-			for (i in mustConnectTo)
-				me.connect(mustConnectTo[i], newName)
-			return [deleted.name, newName]
+			var conns = toMerge.reduce( (acc, item) => acc.concat([...me.deleteNode(item).connectedTo]), [])
+			conns = conns.filter(x => !new Set(toMerge).has(x))
+			me.createNode(target, conns) ; return [target, conns]
 		})
 	}
 	
@@ -65,9 +47,8 @@ function Controller() {
 		name = validate(name, true)
 		return me.compound(function () {
 			// can we combine multiple update requests into one in google realtime?
-			var connectedTo = me.listConnections(name)
-			for (i in connectedTo)
-				disconnectOneway(connectedTo[i], name)
+			var connectedTo = me.connectionSet(name)
+			for (let that of connectedTo) disconnectOneway(that, name)
 				
 			me.graph.delete(name);
 			return {name:name, connectedTo:connectedTo}
@@ -75,24 +56,14 @@ function Controller() {
 	}
 	
 	disconnectOneway = function(fromKey, entry) {
-		//console.log("deleted " + endtry + " from " + fromKey)
-		var connections = connectionSet(fromKey)
-		delete connections [entry]
-		setConnections(fromKey, connections)
+		updateConnections(fromKey, function(connections){connections.delete(entry); return connections})
 	}
 	
-	setConnections = function(key, dict) {
-		var values = Object.keys(dict).join(',')
-		console.log("storing " + values + " values into " + key)
-		me.graph.set(key, values)
-	}
-
 	this.disconnectNodes = function(a, b) {
 		a = validate(a, true) ; b = validate(b, true)
 		return me.compound(function() {
 			disconnectOneway(a, b)
 			disconnectOneway(b, a)
-			console.log("disconnecting " + b + " from " + a + "("+me.graph.get(a)+")")
 		})
 	}
 	
@@ -101,6 +72,14 @@ function Controller() {
 		me.disconnectNodes(pair[0], pair[1])
 	}
 
+	function updateConnections(node,updateFunc) {
+		var values = Array.from(updateFunc(me.connectionSet(node))).join(me.separator)
+		me.graph.set(node, values)
+
+	}
+
+	this.connectAll = function(node, conns) { for (let that of conns) me.connect(that, node) }
+	
 	this.connect = function(a,b) {
 		a = validate(a, true) ; b = validate(b, true)
 		
@@ -108,17 +87,13 @@ function Controller() {
 		// Renaming removes the connections, creates the node with new name and reconnects. It will try to connect to deleted, old name and fail. Do not permit the self-refs to happen at all.
 		if (a == b) return //throw new Error( "Cannot create self reference. Requested one for " + )
 			
-		
-		function half(a,b) {
-			var aValues = connectionSet(a)
-			aValues[b] = null // append an item into set: map to dummy value
-			setConnections(a, aValues)
-		}
+		function half(a,b) { updateConnections(a, function(connections){return connections.add(b)}) }
 		
 		//These checks are not needed from a graphical envirnoment, 
 		// which will have no option to select non-existing for connection
-		if (me.graph.get(a) == null) throw new Error("node " + a + " does not exist")
-		if (me.graph.get(b) == null) throw new Error("node " + b + " does not exist")
+		//console.log(a + ":" +b+ " are mapped to " + me.graph.get(a) + ":" + me.graph.get(b))
+		//if (me.graph.get(a) == null) throw new Error("node " + a + " does not exist") //http://stackoverflow.com/questions/37553251/updating-just-created-collaborative-map-entries
+		//if (me.graph.get(b) == null) throw new Error("node " + b + " does not exist")
 		
 		return me.compound(function() {
 			half(a,b)
@@ -154,25 +129,11 @@ function Controller() {
 			me.model = doc.getModel() ; me.separator = me.model.getRoot().get('configuration').get('separator')
 			me.graph = me.model.getRoot().get('graph');
 			
-			me.graph.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, onMapValueChanged);
 			onFileLoaded(doc)
 		/*      textArea2.onkeyup = function() {
 			string.setText(textArea2.value);
 		  };*/
 
-		  undoButton.onclick = function(e) {
-			me.model.undo();
-		  };
-		  redoButton.onclick = function(e) {
-			me.model.redo();
-		  };
-
-		  // Add event handler for UndoRedoStateChanged events.
-		  var onUndoRedoStateChanged = function(e) {
-			undoButton.disabled = !e.canUndo;
-			redoButton.disabled = !e.canRedo;
-		  };
-		  me.model.addEventListener(gapi.drive.realtime.EventType.UNDO_REDO_STATE_CHANGED, onUndoRedoStateChanged);
 		}
 		
 		var realtimeOptions = {

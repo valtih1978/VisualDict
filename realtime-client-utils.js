@@ -276,7 +276,7 @@ rtclient.RealtimeLoader.prototype.start = function() {
  */
 rtclient.RealtimeLoader.prototype.handleErrors = function(e) {
   if(e.type == gapi.drive.realtime.ErrorType.TOKEN_REFRESH_REQUIRED) {
-    authorizer.authorize();
+    this.authorizer.authorize()
   } else if(e.type == gapi.drive.realtime.ErrorType.CLIENT_ERROR) {
     alert("An Error happened: " + e.message);
     window.location.href= "/";
@@ -294,9 +294,6 @@ rtclient.RealtimeLoader.prototype.handleErrors = function(e) {
 rtclient.RealtimeLoader.prototype.load = function() {
   var fileId = rtclient.params['fileId'];
   var state = rtclient.params['state'];
-
-  // Creating the error callback.
-  var authorizer = this.authorizer;
 
 	console.log("RT.load, rclient.params=" + Object.keys(rtclient.params) + "")
   // We have file IDs in the query parameters, so we will use them to load a file.

@@ -7,18 +7,13 @@
    <script type="text/javascript" src="realtime-client-utils.js"></script>
    <script>
  	
-	var configuration
  	// called by controller.js
 	function onFileLoaded(ignoredDoc) {
-		configuration = controller.getConfiguration()
-		var keys = configuration.keys()
-		for (var k in keys) if (keys[k] != 'langs'){
-			textarea1.textContent += keys[k] + " = " + configuration.get(keys[k]) + "\n"
-		}
-		var langs = configuration.get('langs')
-		for (var k in langs) {
-			textarea1.textContent += k + ": " + langs[k] + "\n"
-		}
+		//configuration.keys().forEach(key => if (key != 'langs') textarea1.textContent += keys[k] + " = " + configuration.get(keys[k]) + "\n")
+		var configuration = controller.getConfiguration();
+		configuration.keys().forEach(key => {if (key != 'langs') textarea1.textContent += key + " = " + configuration.get(key) + "\n"})
+		//controller.getConfig('langs').keys().forEach((k, lang) => textarea1.textContent += k + ": " + lang + "\n")
+		let langs = controller.getConfig('langs') ; for (let k in langs) { textarea1.textContent += k + ": " + langs[k] + "\n" }
 		textarea1.disabled = savebutton.disabled = false
 	}
 	
@@ -39,25 +34,18 @@
 		//alert(JSON.parse(textarea1.value.replace(/\n/g, ","))) 
 		
 		// let's parse manualy
-		var pairs = textarea1.value.split('\n') ; var json = {}
+		var json = {} ; var configuration = controller.getConfiguration(); 
 		controller.compound(function() {
-			configuration.clear()
-			for (var k in pairs) {
+			configuration.clear() ; textarea1.value.split('\n').forEach( line => {
 				function decouple(separator, todo) {
-					if (pairs[k].indexOf(separator) != -1) {
-						var pair = pairs[k].split(separator).map(function(item) {return item.trim()})
+					if (line.indexOf(separator) != -1) {
+						var pair = line.split(separator).map(function(item) {return item.trim()})
 						todo(pair[0], pair[1])
 					}
 				}
-				decouple(':', function(first, second) {
-					console.log("language " + first + "=>" + second)
-					json[first] = second
-				})
-				decouple('=', function(property, value) {
-					console.log("general setting " + property + " => " + value)
-					configuration.set(property, value)
-				})
-			}
+				decouple(':', (first, second) => json[first] = second)
+				decouple('=', (property, value) => configuration.set(property, value))
+			})
 			configuration.set('langs', json)
 		})
 
@@ -74,7 +62,7 @@
  </head>
  
  <!-- Start Realtime when the body has loaded. -->
-<body onLoad='controller = new Controller()'>
+<body onLoad='controller = new Controller(onFileLoaded)'>
  
    <button id="authorizeButton" disabled>You must authorize</button>
    <button id="pick" onclick="rtclient.selectOrCreateNew()">Pick another file</button>

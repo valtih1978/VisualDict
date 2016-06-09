@@ -6,7 +6,7 @@ recede the mouse too far away.
 
 
 -->
-<body onLoad="controller = new Controller()">
+<body  style="background-color:lightgrey;" onLoad="controller = new Controller(onFileLoaded)">
   <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
   <script type="text/javascript" src="realtime-client-utils.js"></script>
   <script type="text/javascript" src="controller.js"></script>
@@ -276,9 +276,9 @@ recede the mouse too far away.
 		//nodes.update({id: selected[0], label:validName})
 		var temp = "flipping_temp 1bf4e67deadad20cc14d"
 		controller.compound(function() {
-			controller.renameNode(name1, temp)
-			controller.renameNode(name2, name1)
-			controller.renameNode(temp, name2)
+			controller.mergeRename([name1], temp)
+			controller.mergeRename([name2], name1)
+			controller.mergeRename([temp], name2)
 		})
 	}
 	
@@ -310,22 +310,18 @@ recede the mouse too far away.
 	
 	function makeProxy(id, location) {
 		if (nodes.get(id) == null) {
-			nodes.add({id: id, label: id, x: location.x, y: location.y, allowedToMoveX: true, allowedToMoveY: true, shape: 'dot', title:id})
+			var nn = {id: id, label: id, x: location.x, y: location.y, allowedToMoveX: true, allowedToMoveY: true, title:id}
+			if (controller.connectionSet(id).size != 1) nn.shape = 'dot'
+			nodes.add(nn)
 		}
 	}
 
-	function foreach(node, f) {
-		var links = controller.listConnections(node)
-		for (var l in links) f(links[l])
-	}
-			
 	/*depth == 0: stop descending and pop up a proxy for any unavailable connection */
 	function partialExpand(id, depth, location) {
 	
 		function log(msg) {
 			console.log(new Array(depth ).join(" ") + msg)
 		}
-
 		// Nodes.get(id) returns the object added by nodes.add(node) whereas network.nodes[id] is related 
 		// graph node. It has no 'shape' or 'title' but contains right current coordinages.
 		var existent = nodes.get(id) ;
@@ -335,18 +331,19 @@ recede the mouse too far away.
 		if (existent == null) {
 			function join(buddy) {
 				if (network.edges[edgeId(id, buddy)] == null) {
-					visConnect(buddy, id, location) ; visConnect(id, buddy, location)
+					visConnect(buddy, id, location) ; // both connections are necessary when
+					visConnect(id, buddy, location)  // establishing connections on expand
 				}
 			}
+			
+			var conns = controller.connectionSet(id)
+			
 			if (depth == 0) {
 				makeProxy(id, location)
-				foreach(id, function (buddy) {var node = nodes.get(buddy); if (node != null) join(buddy)})
+				conns.forEach(function (buddy) {var node = nodes.get(buddy); if (node != null) join(buddy)})
 			} else  { 
-			
 				nodes.add({id: id, label:id, x: location.x, y: location.y, allowedToMoveX: true, allowedToMoveY: true})
-
-				foreach(id, function (buddy) { partialExpand(buddy, depth-1, network.nodes[id]) ; join(buddy)})
-				
+				conns.forEach(function (buddy) { partialExpand(buddy, depth-1, network.nodes[id]) ; join(buddy)})
 			}
 		}
 
@@ -375,15 +372,15 @@ recede the mouse too far away.
 	function addnodeButtonClicked() {
 		var connectTo = network.getSelection().nodes
 		var newWords = input1.value.split(controller.separator).map(function(word) {return word.trim()})
+		console.log('adding ' + newWords + " to " + connectTo)
+		
 		controller.compound(function() {
-			for (var i in newWords) {
-				var newWord = newWords[i].trim()
-				if (controller.graph.get(newWord) == null)
-					willingToSelect = controller.createNode(newWord)
-				for (var key in connectTo)
-					controller.connect(connectTo[key], newWord)
-				connectTo.push(newWord) // chain new words together
-			}
+			
+			newWords.forEach ( nw => { nw = nw.trim()
+				if (controller.graph.get(nw) == null) willingToSelect = controller.createNode(willingToSelect = nw, connectTo)
+					else controller.connectAll(nw, connectTo)
+				connectTo.push(nw) // connect all new words together to the initially selected ones
+			})
 		})
 		//input1.value = ""
 	}
@@ -410,16 +407,7 @@ recede the mouse too far away.
 
 		var victims = network.getSelection().nodes
 		var target = willingToSelect = input1.value.trim()
-		controller.compound(function() {
-			if (victims.indexOf(target) != -1) victims = victims.filter(function(v) {return v != target}) // if target exists among selected -- merge to it
-			else if(nodes.get(target) != null) {} // merge to another existing node
-			else controller.createNode(target) // if target existent -- create
-			console.log("replacing " + victims.join(",") + " with " + target)
-			for (var v in victims) {
-				foreach(victims[v], function(buddy) {if (victims.indexOf(buddy) == -1) controller.connect(target, buddy)})
-				controller.deleteNode(victims[v])
-			}
-		})
+		controller.mergeRename(victims, target)
 		onselect(network.getSelection())
 	}
 	
@@ -458,7 +446,7 @@ recede the mouse too far away.
 		}
 		else if (evt.oldValue == null) {
 			Summary.update(+1) ; console.log("remote event: created " + evt.property)
-
+			console.log("remote event: model updated " +  evt.property + ": " + evt.oldValue + " => " + evt.newValue)
 			var selected = topLocation()
 			nodes.add({id: evt.property, label:evt.property, x: selected.x, y: selected.y, allowedToMoveX: true, allowedToMoveY: true})
 			
@@ -484,7 +472,7 @@ recede the mouse too far away.
 		}
 		
 	}
-
+	
 	function validEdgeDir(a, b) { return a < b }
 	
 	function edgeId(a,b) {
@@ -495,6 +483,22 @@ recede the mouse too far away.
 	
 	function onFileLoaded() {
 
+		document.body.style.backgroundColor = 'white'
+		
+		controller.graph.addEventListener(gapi.drive.realtime.EventType.VALUE_CHANGED, onMapValueChanged);
+		undoButton.onclick = function(e) { controller.model.undo(); };
+		redoButton.onclick = function(e) { controller.model.redo(); };
+
+		// Add event handler for UndoRedoStateChanged events.
+		var onUndoRedoStateChanged = function(e) {
+			undoButton.disabled = !e.canUndo;
+			redoButton.disabled = !e.canRedo;
+		};
+		controller.model.addEventListener(gapi.drive.realtime.EventType.UNDO_REDO_STATE_CHANGED, onUndoRedoStateChanged);
+		  
+
+		
+		
 		if (location.search.indexOf("mode=") != -1)
 			controller.setConfig('almende-mode', location.search.replace("?mode=", ""))
 		
@@ -508,7 +512,7 @@ recede the mouse too far away.
 		if (!isPartial()) for (var i in knots) { //cy.startBatch() try {
 			var node = knots[i]
 			var added = nodes.add({id: node, label:node})
-			var associations = controller.listConnections(node) ; for (var j in associations)  visConnect(node, associations[j])
+			var associations = controller.connectionSet(node) ; for (let assoc of associations) visConnect(node, assoc)
 		} else
 			resetButton.style.display = 'block'
 
