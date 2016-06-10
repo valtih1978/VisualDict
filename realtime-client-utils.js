@@ -223,28 +223,19 @@ rtclient.RealtimeLoader.prototype.loadFile = function(fileId) {
 // No fileId or state have been passed. We create a new Realtime file and redirect to the URL to load it.
 rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
   
-	rtclient.dialog.style.visibility = 'visible'
+	makeDiv((html, textNode, close) => {
+		var b = textNode("b") ; var p = text => textNode("p")('') ; var h = textNode("h1")
+		h("Loading drive API v2") ; gapi.client.load('drive', 'v2', function() {
+
+			var h1 = h("Fetching list of available files")
 	
-	function html(type, attributes, text) {
-		var el = document.createElement(type);
-		if (attributes) for (var a in attributes) el[a] = attributes[a]
-		rtclient.dialog.firstChild.appendChild(el); 
-		if (text) el.appendChild(document.createTextNode(text));
-		return el
-	} ; var b = text => html("b", {}, text)
-	
-	html("h1", {}, "Fetching list of available files")
-	summarize("Loading drive API v2")
-    gapi.client.load('drive', 'v2', function() {
-	
-	summarize("Loading file list")
-	// Pick file automatically if one already exists
-    gapi.client.drive.files.list({q:"mimeType = '"+mimeType()+"' and trashed=false"}).execute(function(resp) {
-		// if next page token -- fetch another page
-		rtclient.dialog.firstChild.innerHTML = '<h2>Click a row to select a dictionary-DB file or create a new one</h2>'+
-			'Clicking the first name column will jump you to the file viewer<p>';
-		if (resp.items.length > 0) {
-			var table = html('table', {border: 1})
+			// Pick file automatically if one already exists
+			gapi.client.drive.files.list({q:"mimeType = '"+mimeType()+"' and trashed=false"}).execute(function(resp) {
+				// if next page token -- fetch another page
+				h1.parentNode.innerHTML = "<h2>Click a row to select a dictionary-DB file or create a new one</h2>"
+					+ 'Clicking the first (name) column will redirect you to the Google Drive' ; p()
+
+		if (resp.items.length > 0) { var table = html('table', {border: 1})
 			var fields = // Object.keys(resp.items[0]) // all available fields
 				["title", "selfLink", "mimeType", "createdDate", "modifiedDate", "modifiedByMeDate", "quotaBytesUsed", "version"]
 			function row(fieldValue) { var tr = table.insertRow(0)
@@ -259,13 +250,12 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
 			}) ; row(field => field) ; html("br", {})
 		}
 		b("New file: ") ; html("input", {id: 'NewFileName', value: 'VisualDict-' + (resp.items.length+1)}) ; 
-		b(" ") ; html("button", {onclick: function() {createNew(NewFileName.value)}}, "Create") ; html("p", {})
-		html("button", {onclick:function(){rtclient.dialog.style.visibility = 'hidden'}}, "Cancel") ; b(" ")
-		html("a", {href:"https://drive.google.com/drive/#search?q=app:%22Word Graph Dictionary Visualizer%22"}, "If you wish to rename/edit files, resort to the google drive")
+		b(" ") ; html("button", {}, "Create").onclick = () => createNew(NewFileName.value) ; p()
+		html("button", {}, "Cancel").onclick = close ; b(" ")
+		html("a", {href:"https://drive.google.com/drive/#search?q=app:%22Word Graph Dictionary Visualizer%22", target:"_blank"}, "If you wish to rename/edit files, resort to the google drive")
 			/*if (resp.items.length > 1) pick();
 			else if (resp.items.length == 1) _this.redirectTo(resp.items[0].id);
 			else */
-			
 		function createNew(fname) {
 			gapi.client.drive.files.insert({
 				  'resource': {
@@ -288,6 +278,7 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
 	}); // list
 
     }); // load gapi
+	}); // div
 	
 
 }

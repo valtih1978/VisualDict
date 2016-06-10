@@ -39,7 +39,7 @@ recede the mouse too far away.
 	  <tr><td><a class="aboutbar" href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a></td></tr>
 	  <tr><td><button class="aboutbar" onclick="controller.loader.selectOrCreateNew()">Anothr file</button></td></tr>
 	  <tr><td><button class="aboutbar" onclick="controller.loader.GooglePick()">Ggl picker</button></td></tr>
-	  <tr><td><a class="aboutbar" href="javascript:historicTrends()" target="_blank">Hist trend</a></td></tr>
+	  <tr><td><a class="aboutbar" id="histButton">Hist trend</a></td></tr>
   </table>
   <style>.aboutbar{display:none}</style>
   
@@ -448,9 +448,6 @@ recede the mouse too far away.
 			redoButton.disabled = !e.canRedo;
 		}; document.querySelectorAll("button").forEach(b => b.addEventListener("click", () => input1.focus()))
 		controller.model.addEventListener(gapi.drive.realtime.EventType.UNDO_REDO_STATE_CHANGED, onUndoRedoStateChanged);
-		  
-
-		
 		
 		if (location.search.indexOf("mode=") != -1)
 			controller.setConfig('almende-mode', location.search.replace("?mode=", ""))
@@ -484,27 +481,30 @@ recede the mouse too far away.
 
 	}	
 
-	function historicTrends() { let dialog = document.createElement("div");
+	function makeDiv(populate) { let dialog = document.createElement("div");
 		style(dialog, "position: fixed; left: 0px; top: 0px; width:100%; height:100%; z-index: 1000; background-color:white") // defined in realtime-client
-		function html(type, attributes, text) {
-			var el = document.createElement(type);
-			if (attributes) for (var a in attributes) el.setAttribute(a, attributes[a])
-			if (text) el.appendChild(document.createTextNode(text));
-			dialog.appendChild(el); return el
-		}; function escFunc(e) {if (e.keyCode == 27) close()} ; function close() {dialog.remove();
+		function escFunc(e) {if (e.keyCode == 27) close()} ; function close() {dialog.remove();
 			window.removeEventListener('keydown', escFunc)} ; window.addEventListener('keydown', escFunc)
-		html("b", {}, "Usage: Zoom: click-drag, Pan: shift-click-drag, Restore zoom level: double-click or ");
-		html('a', {href:"#"}, "Close").onclick=()=>close() ; html('div', {id:"div_g", style:"width:100%"})
+		function textNode(tag) {return text => make(tag, {}, text)}
+		function make(type, attributes, text) { var el = document.createElement(type);
+			if (attributes) for (var a in attributes) el.setAttribute(a, attributes[a])
+			if (text) el.appendChild(document.createTextNode(text)); dialog.appendChild(el); return el
+		} ; populate(make, textNode, close) ; document.body.appendChild(dialog)
+	}
+	function historicTrends() {
+
+		makeDiv((make, textNode, close) => {
+			textNode("b")("Usage: Zoom: click-drag, Pan: shift-click-drag, Restore zoom level: double-click or ");
+			textNode('button')("Close").onclick=close ; make('div', {id:"div_g", style:"width:100%"})
+		})
 
 		var script = document.createElement('script'); script.src = 'http://dygraphs.com/dygraph-combined.js';
-
 		script.onload = function () {
 			Dygraph.addEvent(document, "mousewheel", function() { lastClickedGraph = null; });
 			Dygraph.addEvent(document, "click", function() { lastClickedGraph = null; });
 			let data = controller.trends.asArray().map(( [ms, sample])=> [new Date(ms), ...sample])
 			new Dygraph(document.getElementById("div_g"), data,{labels: [ "Date", "nodes", "edges" ]});
-		};
-		document.body.appendChild(dialog); document.head.appendChild(script);
+		}; document.head.appendChild(script);
 	}
     </script>
 
