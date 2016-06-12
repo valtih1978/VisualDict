@@ -85,7 +85,7 @@ recede the mouse too far away.
 		
 		function selectNode(id) {
 			var selected = (shiftPressed) ? network.getSelection().nodes : []
-			selected.push(id) ; console.log("select node " + id + " caused partial expand"); partialExpand(id, 1, topLocation())
+			selected.push(id) ; console.log("select node " + id + " caused partial expand"); partialExpand(id, topLocation())
 			network.selectNodes(selected) // select in graph
 			onselect(network.getSelection())
 		}
@@ -251,7 +251,7 @@ recede the mouse too far away.
 
 	function expandFirst() {
 			var fi = word_list.firstChild ; if (fi) {
-				partialExpand(fi.textContent, 1, {x:0, y:0})
+				partialExpand(fi.textContent, {x:0, y:0})
 				fi.click()
 			}
 	}
@@ -272,13 +272,14 @@ recede the mouse too far away.
 	function makeProxy(id, location) {
 		if (nodes.get(id) == null) {
 			var nn = {id: id, label: id, x: location.x, y: location.y, allowedToMoveX: true, allowedToMoveY: true, title:id}
+
 			if (controller.connectionSet(id).size != 1) nn.shape = 'dot'
 			nodes.add(nn)
 		}
 	}
-
+	function visEdge(a,b) {return network.edges[edgeId(a, b)]}
 	/*depth == 0: stop descending and pop up a proxy for any unavailable connection */
-	function partialExpand(id, depth, location) {
+	function partialExpand(id, location, depth) { depth = depth || parseInt(controller.getConfig('hoverExpandDepth')) + 1
 	
 		function log(msg) {
 			console.log(new Array(depth ).join(" ") + msg)
@@ -290,21 +291,19 @@ recede the mouse too far away.
 			nodes.remove(id); existent = null}
 		
 		if (existent == null) {
-			function join(buddy) {
-				if (network.edges[edgeId(id, buddy)] == null) {
+			function join(buddy) { if (!visEdge(id, buddy)) {
 					visConnect(buddy, id, location) ; // both connections are necessary when
 					visConnect(id, buddy, location)  // establishing connections on expand
-				}
-			}
+			}}
 			
 			var conns = controller.connectionSet(id)
 			
-			if (depth == 0) {
+			if (depth == 1) {
 				makeProxy(id, location)
 				conns.forEach(function (buddy) {var node = nodes.get(buddy); if (node != null) join(buddy)})
 			} else  { 
 				nodes.add({id: id, label:id, x: location.x, y: location.y, allowedToMoveX: true, allowedToMoveY: true})
-				conns.forEach(function (buddy) { partialExpand(buddy, depth-1, network.nodes[id]) ; join(buddy)})
+				conns.forEach(function (buddy) { partialExpand(buddy, network.nodes[id], depth-1) ; join(buddy)})
 			}
 		}
 

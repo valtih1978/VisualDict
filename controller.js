@@ -110,7 +110,7 @@ function Controller(onFileLoaded) {
 		}
 	}
 
-	this.defaultConfig = {langs:{'default': 'blue'}, separator: ',', 'almende-mode': 'partial', trendsUpdatesPerDay: 10 }
+	this.defaultConfig = {langs:{'default': 'blue'}, separator: ',', 'almende-mode': 'partial', trendsUpdatesPerDay: 10, hoverExpandDepth: 3 }
 	
 	this.start = function () {
 
