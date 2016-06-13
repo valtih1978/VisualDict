@@ -17,7 +17,7 @@ recede the mouse too far away.
   -->
 <div id="network_div" style=""></div>
 
-<div style="float: left; width:50; height: 100; font-size: xx-small; white-space:nowrap"><span id="Summary">I know this works in Chrome<br></span><hr>
+<div style="float: left; width:50; height: 100; font-size: xx-small; white-space:nowrap"><span id="Summary">I know this works in Chrome<br></span>
 <ul id="word_list" class="controls"></ul></div>
 
 
@@ -455,7 +455,9 @@ recede the mouse too far away.
 		
 		Summary.nodes = Summary.edges = 0 ; let format =  x => x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 		Summary.update=function(nodeDiff, edgeDiff) {Summary.nodes += nodeDiff ; Summary.edges += edgeDiff
-			this.innerHTML = format(Summary.nodes) + " words and " +format(Summary.edges/2) + " transitions"} // div by 2 cos graph stores edges in both directions whereas we display only one
+			this.innerHTML = "<a href='https://developers.google.com/google-apps/realtime/size' target='_blank' title='Should not exceed 10 MB'>"
+				+ format(controller.model.bytesUsed) + " bytes</a> for " + format(Summary.nodes) + " words with " +format(Summary.edges/2) + " transitions"
+		} 															// div by 2 cos graph stores edges in both directions whereas we display only one
 		var knots = controller.graph.keys() ; knots.forEach(n => {enlistTheWord(n) ; Summary.edges += controller.connectionSet(n).size})
 		Summary.update(knots.length, 0)
 
