@@ -141,7 +141,7 @@ function Controller(onFileLoaded) {
 	}
 	
 	function onAuxillaryDocLoaded(doc) {
-		histButton.href = "javascript:historicTrends()"
+		histButton.href = "javascript:historicTrends(false)"
 		function getStat() {// we could actually take this info from the almende file, since it keeps track of the stats
 			let es = 0; let keys = me.graph.keys() ; keys.forEach(n =>  es += me.connectionSet(n).size) ; return [keys.length, es/2]
 		} ; function getLasttrendsRecord(offset) {return trends.get(trends.length-1)[offset]} // offset 0: time stamp, 1: nodes-edges value

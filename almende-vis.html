@@ -497,19 +497,22 @@ recede the mouse too far away.
 			if (text) el.appendChild(document.createTextNode(text)); dialog.appendChild(el); return el
 		} ; populate(make, textNode, close) ; document.body.appendChild(dialog)
 	}
-	function historicTrends() {
+	function historicTrends(diff) {
 
 		makeDiv((make, textNode, close) => {
 			textNode("b")("Usage: Zoom: click-drag, Pan: shift-click-drag, Restore zoom level: double-click or ");
-			textNode('button')("Close").onclick=close ; make('div', {id:"div_g", style:"width:100%"})
+			textNode('button')("Close").onclick=close ; (textNode("b")(" Diff")) ; var de = make('input', {type:"checkbox"}) ; de.checked = diff
+			var timer = setInterval(e => {if (de.checked != diff) {clearTimeout(timer) ; close() ; historicTrends(!diff)}}, 1000)
+			make('div', {id:"div_g", style:"width:100%"})
 		})
 
 		var script = document.createElement('script'); script.src = 'http://dygraphs.com/dygraph-combined.js';
 		script.onload = function () {
 			Dygraph.addEvent(document, "mousewheel", function() { lastClickedGraph = null; });
 			Dygraph.addEvent(document, "click", function() { lastClickedGraph = null; });
-			let data = controller.trends.asArray().map(( [ms, sample])=> [new Date(ms), ...sample])
-			new Dygraph(document.getElementById("div_g"), data,{labels: [ "Date", "nodes", "edges" ]});
+			let data = controller.trends.asArray() ; data = diff ? data.slice(1).map(
+				([ms, [w,e]],i) => {var [,[ww, ee]] = data[i] ; return [ms, [w - ww, e - ee]]}) : data
+			new Dygraph(document.getElementById("div_g"), data.map(( [ms, sample])=> [new Date(ms), ...sample]), {labels: [ "Date", "nodes", "edges" ]});
 		}; document.head.appendChild(script);
 	}
     </script>
