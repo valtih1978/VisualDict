@@ -6,7 +6,9 @@ recede the mouse too far away.
 
 
 -->
-<body  style="background-color:lightgrey;" onLoad="controller = new Controller(onFileLoaded)">
+<body onLoad="controller = new Controller(onFileLoaded)" style="background-color:lightgrey;
+	-webkit-touch-callout: none; /* iOS Safari */ -webkit-user-select: none;   /* Chrome/Safari/Opera */ -khtml-user-select: none; /* Konqueror */ -moz-user-select: none; /* Firefox */ -ms-user-select: none; /* Internet Explorer/Edge */ user-select: none; /* Non-prefixed version, currently not supported by any browser */">
+
   <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
   <script type="text/javascript" src="realtime-client-utils.js"></script>
   <script type="text/javascript" src="controller.js"></script>
@@ -28,9 +30,6 @@ recede the mouse too far away.
 <a href="javascript:" style="font-size:16px; font-weight: bold; font-family: Helvetica, Arial, sans-serif; text-decoration: none; line-height:40px; width:100%; display:inline-block"><span style="color: #FFFFFF">You must authorize</span></a>
 </td> 
 </tr> </table> 
- 
-
- 
  
   <table onmouseenter="classVisible('aboutbar', 'block')" onmouseleave="classVisible('aboutbar', 'none')" style="float: right; font-size:small">
 	  <tr id=resetButton style="display:none"><td><a href="javascript:nodes.clear(); edges.clear();" title="Clean up the display. You can achieve the same with F5-page refresh but this button is faster and unloads the server.">Reset</a>&nbsp;&nbsp;&nbsp;</td></tr>
