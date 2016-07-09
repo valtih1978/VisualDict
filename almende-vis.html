@@ -509,8 +509,8 @@ recede the mouse too far away.
 		script.onload = function () {
 			Dygraph.addEvent(document, "mousewheel", function() { lastClickedGraph = null; });
 			Dygraph.addEvent(document, "click", function() { lastClickedGraph = null; });
-			let data = controller.trends.asArray() ; data = diff ? data.slice(1).map(
-				([ms, [w,e]],i) => {var [,[ww, ee]] = data[i] ; return [ms, [w - ww, e - ee]]}) : data
+			let data = [...controller.trends.asArray(), [Date.now(), [Summary.nodes, Summary.edges/2]]]
+			data = diff ? data.slice(1).map(([ms, [w,e]],i) => {var [,[ww, ee]] = data[i] ; return [ms, [w - ww, e - ee]]}) : data
 			new Dygraph(document.getElementById("div_g"), data.map(( [ms, sample])=> [new Date(ms), ...sample]), {labels: [ "Date", "nodes", "edges" ]});
 		}; document.head.appendChild(script);
 	}
