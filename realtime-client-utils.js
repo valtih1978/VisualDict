@@ -88,18 +88,11 @@ rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
 		}
 	};
 
-  function auth(access) { return "https://www.googleapis.com/auth/drive." + access }
-
   function authorize(popup) {
 	summarize(`Authorizing(${popup})`)
     gapi.auth.authorize({
       client_id: rtclient.clientId,
-      scope: [
-		auth('install'), // * OAuth 2.0 scope for installing Drive Apps.
-		auth('file') // * OAuth 2.0 scope for opening and creating files.
-        //rtclient.OPENID_SCOPE = 'openid' // * OAuth 2.0 scope for accessing the user's ID.
-		//,auth('file'), auth('readonly'), auth('metadata.readonly'), auth('appdata')
-      ],
+	  scope: ['install', 'file'].map(function (access) { return "https://www.googleapis.com/auth/drive." + access }),
       //user_id: userId,
 		immediate: !popup // true try with no popups first
 					//false // authorizeWithPopup
