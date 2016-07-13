@@ -244,6 +244,8 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
 		}
 		b("New file: ") ; html("input", {id: 'NewFileName', value: 'VisualDict-' + (resp.items.length+1)}) ; 
 		b(" ") ; html("button", {}, "Create").onclick = () => createNew(NewFileName.value) ; p()
+		html("button", {}, "Demo Rus-Eng dictionary").onclick = function(){me.redirectTo("0B00--A0eRH1JdldBdkU0MUVmUEk", true)}
+			b(" (50k words, read only)") ; html("br", {})
 		html("button", {}, "Cancel").onclick = close ; b(" ")
 		html("a", {href:"https://drive.google.com/drive/#search?q=app:%22Word Graph Dictionary Visualizer%22", target:"_blank"}, "If you wish to rename/edit files, resort to the google drive")
 			/*if (resp.items.length > 1) pick();
