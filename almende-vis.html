@@ -6,7 +6,12 @@ recede the mouse too far away.
 
 
 -->
-<body onLoad="controller = new Controller(onFileLoaded)" style="background-color:lightgrey;
+<body onLoad="
+	Summary.innerHTML = 'Loading realtime client API<BR>' ; gapi.load('client,drive-realtime', () => {
+		Summary.innerHTML += 'Loading Drive_v2 API<br>' ; gapi.client.load('drive', 'v2').then(() =>
+			controller = new Controller(onFileLoaded))})"
+
+	style="background-color:lightgrey;
 	-webkit-touch-callout: none; /* iOS Safari */ -webkit-user-select: none;   /* Chrome/Safari/Opera */ -khtml-user-select: none; /* Konqueror */ -moz-user-select: none; /* Firefox */ -ms-user-select: none; /* Internet Explorer/Edge */ user-select: none; /* Non-prefixed version, currently not supported by any browser */">
 
   <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
@@ -57,7 +62,7 @@ recede the mouse too far away.
 		function divView1() { div.innerHTML = ''
 			inDiv('button', {}, 'Copy into').onclick = function() { div.innerHTML = 'Loading drive API'
 				newFileName = newFileName.value ; var parsed = JSON.parse(ta.value)
-				gapi.client.load('drive', 'v2', function() { div.innerHTML = 'Creating the file'
+				div.innerHTML = 'Creating the file'
 					createNewFile(newFileName, file => { div.innerHTML = 'Openting the new document for writing'
 						function modelInitializer(model) { var root = model.getRoot()
 							 for (k in parsed) {var v = parsed[k] ; var kind = (Array.isArray(v) ? 'List' : 'Map')
@@ -68,15 +73,14 @@ recede the mouse too far away.
 							div.innerHTML = 'Importing the data'; modelInitializer(model)}, 0), () => {})
 					})
 
-				})
 			} ; var newFileName = inDiv('input', {value: 'new file name'}) ; inDiv('b', {}, ' to create a copy of the file 	')
 			copies.forEach(c => inDiv('a', {href:origin + '#fileId=' + c.id}, c.title))
-			gapi.client.load('drive', 'v2', () => listFiles(resp => { resp = resp.items
+			listFiles(resp => { resp = resp.items
 				var filtered = resp.filter(file => file.id == rtclient.params.fileId)
 					.forEach(file => newFileName.value = file.title) ; var knownNames = new Set(resp.map(file => file.title))
 				for (i = 1; ; i++) {var newName = newFileName.value + '-copy_' + i
 					if (!knownNames.has(newName)) { newFileName.value = newName; break}}
-			}))
+			})
 		} ; divView1()
 
 	  ">Export</button></td></tr>

@@ -62,8 +62,7 @@ rtclient.params = rtclient.getParams();
 
 function summarize(msg) {if (typeof Summary != "undefined") Summary.innerHTML += msg + "<br>"; else console.log(msg)}
 rtclient.Authorizer = function(onAuthComplete) { var me = this; 
-	summarize('Loading Auth,drive-realtime API')
-  gapi.load('auth:client,drive-realtime', function() { me.authorize(onAuthComplete)});
+  me.authorize(onAuthComplete)
 }
 
 /**
@@ -219,14 +218,13 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
   
 	makeDiv((html, textNode, close) => {
 		var b = textNode("b") ; var p = text => textNode("p")('') ; var h = textNode("h1")
-		h("Loading drive API v2") ; gapi.client.load('drive', 'v2', function() {
 
-			var h1 = h("Fetching list of available files")
-	
-			listFiles(function(resp) { // Pick file automatically if one already exists
-				// if next page token -- fetch another page
-				h1.parentNode.innerHTML = "<h2>Click a row to select a dictionary-DB file or create a new one</h2>"
-					+ 'Clicking the first (name) column will redirect you to the Google Drive' ; p()
+		var h1 = h("Fetching list of available files")
+
+		listFiles(function(resp) { // Pick file automatically if one already exists
+			// if next page token -- fetch another page
+			h1.parentNode.innerHTML = "<h2>Click a row to select a dictionary-DB file or create a new one</h2>"
+				+ 'Clicking the first (name) column will redirect you to the Google Drive' ; p()
 
 		if (resp.items.length > 0) { var table = html('table', {border: 1})
 			var fields = // Object.keys(resp.items[0]) // all available fields
@@ -258,7 +256,6 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
 		
 	}); // list
 
-    }); // load gapi
 	}); // div
 	
 
