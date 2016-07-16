@@ -199,7 +199,8 @@ rtclient.RealtimeLoader.prototype.redirectTo = function(fileId, reload) {
    this.loadFile(fileId);
 }
 
-rtclient.RealtimeLoader.prototype.loadFile = function(fileId) {
+rtclient.RealtimeLoader.prototype.loadFile = function(fileId, initializer, onLoaded) {
+	initializer = initializer || this.options.initializeModel ; onLoaded = onLoaded || this.options.onFileLoaded
 	if (!controller.graph) summarize('Loading your realtime file') // display only on first load
 	
 	function handleErrors(e) { with(gapi.drive.realtime.ErrorType) {switch(e.type) {
@@ -210,7 +211,7 @@ rtclient.RealtimeLoader.prototype.loadFile = function(fileId) {
 		default: throw new Error(e)
 	}}}
 
-  gapi.drive.realtime.load(fileId, this.options.onFileLoaded, this.options.initializeModel, handleErrors);
+  gapi.drive.realtime.load(fileId, onLoaded, initializer, handleErrors);
 }
 
 // No fileId or state have been passed. We create a new Realtime file and redirect to the URL to load it.
@@ -222,8 +223,7 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
 
 			var h1 = h("Fetching list of available files")
 	
-			// Pick file automatically if one already exists
-			gapi.client.drive.files.list({q:"mimeType = '"+mimeType()+"' and trashed=false"}).execute(function(resp) {
+			listFiles(function(resp) { // Pick file automatically if one already exists
 				// if next page token -- fetch another page
 				h1.parentNode.innerHTML = "<h2>Click a row to select a dictionary-DB file or create a new one</h2>"
 					+ 'Clicking the first (name) column will redirect you to the Google Drive' ; p()
@@ -243,6 +243,10 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
 			}) ; row(field => field) ; html("br", {})
 		}
 		b("New file: ") ; html("input", {id: 'NewFileName', value: 'VisualDict-' + (resp.items.length+1)}) ; 
+		function createNew(name) {createNewFile(name, function(file) {
+			console.log(name + " with mime "+rtclient.REALTIME_MIMETYPE+" created, redirect to " + file.id)
+			 me.redirectTo(file.id, true);
+		})}
 		b(" ") ; html("button", {}, "Create").onclick = () => createNew(NewFileName.value) ; p()
 		html("button", {}, "Demo Rus-Eng dictionary").onclick = function(){me.redirectTo("0B00--A0eRH1JdldBdkU0MUVmUEk", true)}
 			b(" (50k words, read only)") ; html("br", {})
@@ -251,24 +255,6 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
 			/*if (resp.items.length > 1) pick();
 			else if (resp.items.length == 1) _this.redirectTo(resp.items[0].id);
 			else */
-		function createNew(fname) {
-			gapi.client.drive.files.insert({
-				  'resource': {
-					mimeType: rtclient.REALTIME_MIMETYPE,
-					title: fname
-				  }
-				}).execute(function(file) {
-					if (file.id) {
-						console.log("after " + fname + " created with mime "+rtclient.REALTIME_MIMETYPE+" created, redirect file:" + file.id)
-					  me.redirectTo(file.id, true);
-					}
-					// File failed to be created, log why and do not attempt to redirect.
-					else {
-					  console.error('Error creating file.');
-					  console.error(file);
-					}
-				}); // create
-		}
 		
 	}); // list
 
@@ -278,6 +264,19 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
 
 }
 
+function listFiles(handler) {
+	gapi.client.drive.files.list({q:"mimeType = '"+mimeType()+"' and trashed=false"}).execute(handler)
+}
+
+function newFileRes(title) {return {'resource': { mimeType: rtclient.REALTIME_MIMETYPE, title: title}}}
+function createNewFile(fname, whenCreated) {
+	gapi.client.drive.files.insert(newFileRes(fname)).execute(function(file) {
+			if (file.id) whenCreated(file)
+			else {// File failed to be created, log why and do not attempt to redirect.
+			  console.error('Error creating file.'); console.error(file);
+			}
+		}); // create
+}
 
 rtclient.RealtimeLoader.prototype.GooglePick = function() { var me = this
 	function main() {
