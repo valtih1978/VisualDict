@@ -119,7 +119,7 @@ function Controller(onFileLoaded) {
 				model.getRoot().set(title, model.createMap(dict));
 			}
 			append('configuration', me.defaultConfig)
-			append('graph', {a:"b,c", b:"a,d", c:"a,d",d:"c,b,1", "1":"d"})
+			append('graph', {/*a:"b,c", b:"a,d", c:"a,d",d:"c,b,1", "1":"d"*/})
 			model.getRoot().set('trends', model.createList());
 		}
 		
