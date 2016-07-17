@@ -44,7 +44,8 @@ recede the mouse too far away.
 	  <tr><td><button class="aboutbar" onclick="controller.loader.selectOrCreateNew()">Anothr file</button></td></tr>
 	  <tr><td><button class="aboutbar" onclick="controller.loader.GooglePick()">Ggl picker</button></td></tr>
 	  <script>
-		function html(document, parent) { return function (type, attributes, text) { var el = document.createElement(type);
+		function html(parent, document) { var document = document || window.document
+				return function (type, attributes, text) { var el = document.createElement(type);
 					if (attributes) for (var a in attributes) el.setAttribute(a, attributes[a])
 					if (text) el.appendChild(document.createTextNode(text)); parent.appendChild(el); return el
 				}}
@@ -54,10 +55,10 @@ recede the mouse too far away.
 			(v.type == 'List' ? v.asArray() : (v.type == 'Map' ? jsonAMap(v) : v)); return seed}, new Object())}
 		var stringified = JSON.stringify(jsonAMap(window.controller.model.getRoot()))
 		var parsed = JSON.parse(stringified)
-		var doc = window.open('', '_blank').document ; var inBody = html(doc, doc.body)
+		var doc = window.open('', '_blank').document ; var inBody = html(doc.body, doc)
 
 		var ta = inBody('textarea', {style:'width:100%; height:95vh'}) ; ta.value = stringified
-		var div = inBody('div'); var inDiv = html(doc, div)
+		var div = inBody('div'); var inDiv = html(div, doc)
 		var origin = window.location.href.split('#')[0]; var copies = []
 		function divView1() { div.innerHTML = ''
 			inDiv('button', {}, 'Copy into').onclick = function() { div.innerHTML = 'Loading drive API'
@@ -529,7 +530,7 @@ recede the mouse too far away.
 		function escFunc(e) {if (e.keyCode == 27) close()} ; function close() {dialog.remove();
 			window.removeEventListener('keydown', escFunc)} ; window.addEventListener('keydown', escFunc)
 		function textNode(tag) {return text => make(tag, {}, text)}
-		var make = html(document, dialog)
+		var make = html(dialog)
 		populate(make, textNode, close) ; document.body.appendChild(dialog)
 	}
 	function historicTrends(diff) {

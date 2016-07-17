@@ -216,17 +216,16 @@ rtclient.RealtimeLoader.prototype.loadFile = function(fileId, initializer, onLoa
 // No fileId or state have been passed. We create a new Realtime file and redirect to the URL to load it.
 rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
   
-	makeDiv((html, textNode, close) => {
+	makeDiv((make, textNode, close) => {
 		var b = textNode("b") ; var p = text => textNode("p")('') ; var h = textNode("h1")
 
 		var h1 = h("Fetching list of available files")
 
-		listFiles(function(resp) { // Pick file automatically if one already exists
-			// if next page token -- fetch another page
-			h1.parentNode.innerHTML = "<h2>Click a row to select a dictionary-DB file or create a new one</h2>"
-				+ 'Clicking the first (name) column will redirect you to the Google Drive' ; p()
+		listFiles(function(resp) {
 
-		if (resp.items.length > 0) { var table = html('table', {border: 1})
+		h1.parentNode.innerHTML = "<h2>Click a row to select a dictionary-DB file or create a new one</h2>"; p()
+
+		if (resp.items.length > 0) { var table = make('table', {border: 1})
 			var fields = // Object.keys(resp.items[0]) // all available fields
 				["title", "selfLink", "mimeType", "createdDate", "modifiedDate", "modifiedByMeDate", "quotaBytesUsed", "version"]
 			function row(fieldValue) { var tr = table.insertRow(0)
@@ -234,22 +233,23 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
 				   tr.insertCell(fld).appendChild(document.createTextNode(fieldValue(field)));
 				} ; return tr
 			}
+
 			resp.items.forEach ( file => { var tr = row(field => file[field])
-				tr.onclick = function(e) { if (e.srcElement.cellIndex == 0 )
-					window.open('https://drive.google.com/open?id=' + file.id); else me.redirectTo(file.id, true)
-				}
-			}) ; row(field => field) ; html("br", {})
+				tr.onclick = e => me.redirectTo(file.id, true)
+				tr.cells[1].innerHTML += '<a href="https://drive.google.com/open?id='+file.id+'" title="Open in GDrive"' +
+					'style="float:right" target="_blank" onclick="event.stopPropagation()"><img  width="70%" src="gdrive_icon32.png"/></a>'
+			}) ; row(field => field) ; make("br", {})
 		}
-		b("New file: ") ; html("input", {id: 'NewFileName', value: 'VisualDict-' + (resp.items.length+1)}) ; 
+		b("New file: ") ; make("input", {id: 'NewFileName', value: 'VisualDict-' + (resp.items.length+1)})
 		function createNew(name) {createNewFile(name, function(file) {
 			console.log(name + " with mime "+rtclient.REALTIME_MIMETYPE+" created, redirect to " + file.id)
 			 me.redirectTo(file.id, true);
 		})}
-		b(" ") ; html("button", {}, "Create").onclick = () => createNew(NewFileName.value) ; p()
-		html("button", {}, "Demo Rus-Eng dictionary").onclick = function(){me.redirectTo("0B00--A0eRH1JdldBdkU0MUVmUEk", true)}
-			b(" (50k words, read only)") ; html("br", {})
-		html("button", {}, "Cancel").onclick = close ; b(" ")
-		html("a", {href:"https://drive.google.com/drive/#search?q=app:%22Word Graph Dictionary Visualizer%22", target:"_blank"}, "If you wish to rename/edit files, resort to the google drive")
+		b(" ") ; make("button", {}, "Create").onclick = () => createNew(NewFileName.value) ; p()
+		make("button", {}, "Demo Rus-Eng dictionary").onclick = function(){me.redirectTo("0B00--A0eRH1JdldBdkU0MUVmUEk", true)}
+			b(" (50k words, read only)") ; make("br", {})
+		make("button", {}, "Cancel").onclick = close ; b(" ")
+		make("a", {href:"https://drive.google.com/drive/#search?q=app:%22Word Graph Dictionary Visualizer%22", target:"_blank"}, "If you wish to rename/edit files, resort to the google drive")
 			/*if (resp.items.length > 1) pick();
 			else if (resp.items.length == 1) _this.redirectTo(resp.items[0].id);
 			else */
