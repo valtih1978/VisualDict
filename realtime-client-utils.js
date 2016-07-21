@@ -16,11 +16,9 @@ function mimeType() {
 	return rtclient.REALTIME_MIMETYPE + "." + rtclient.clientId.split('-')[0]
 }
 
-function style(el, value) {
-	var value = value.split(";") ; for (var s in value) {
-		var pair = value[s].split(":") ; el.style[pair[0].trim()] = pair[1].trim()
-	}
-}
+function style(el, value) { value.split(";").forEach(keyval =>
+	{var pair = keyval.split(":") ; el.style[pair[0].trim()] = pair[1].trim()}
+)}
 
 rtclient.dialog = (function() {
 	var dialog = document.createElement("div"); dialog.id = "rtclient_file_picker_dialog"
@@ -229,9 +227,9 @@ rtclient.RealtimeLoader.prototype.selectOrCreateNew = function() { var me = this
 			var fields = // Object.keys(resp.items[0]) // all available fields
 				["title", "selfLink", "mimeType", "createdDate", "modifiedDate", "modifiedByMeDate", "quotaBytesUsed", "version"]
 			function row(fieldValue) { var tr = table.insertRow(0)
-				for (var fld in fields) { var field = fields[fld];
-				   tr.insertCell(fld).appendChild(document.createTextNode(fieldValue(field)));
-				} ; return tr
+				fields.forEach ((field, fld) =>
+					tr.insertCell(fld).appendChild(document.createTextNode(fieldValue(field)))
+				) ; return tr
 			}
 
 			resp.items.forEach ( file => { var tr = row(field => file[field])

@@ -1,3 +1,4 @@
+
 <!--TODO: 
 1. show/hide on hover. The must be a hover option to 
 make object visible/hidden. Hidden objects disappear when we 
@@ -527,28 +528,62 @@ recede the mouse too far away.
 
 	function makeDiv(populate) { let dialog = document.createElement("div");
 		style(dialog, "position: fixed; left: 0px; top: 0px; width:100%; height:100%; z-index: 1000; background-color:white") // defined in realtime-client
-		function escFunc(e) {if (e.keyCode == 27) close()} ; function close() {dialog.remove();
-			window.removeEventListener('keydown', escFunc)} ; window.addEventListener('keydown', escFunc)
+		function escFunc(e) {if (e.keyCode == 27) close()} ; window.addEventListener('keydown', escFunc)
+		function close() {dialog.remove(); window.removeEventListener('keydown', escFunc) ; (destructor || function(){})()} 
 		function textNode(tag) {return text => make(tag, {}, text)}
 		var make = html(dialog)
-		populate(make, textNode, close) ; document.body.appendChild(dialog)
+		var destructor = populate(make, textNode, close) ; document.body.appendChild(dialog)
 	}
-	function historicTrends(diff) {
 
+	function historicTrends(diff, scale, avgSize) {var [diff, scale] = [diff, scale].map(a => a || false) ; var avgSize = avgSize || 1
+
+		function visit(tree1, tree2, f) {return typeof tree1 == "number" ? f(tree1, tree2) : tree1.map((el, i) => visit(el, tree2[i], f))};
+		var redVis = (collection, seed) => collection.reduce((acc, el) =>
+			visit(acc, el, (a,b) => a+b), seed);
+		
+		let data = [...controller.trends.asArray(), [Date.now(), [Summary.nodes, Summary.edges/2]]] ; let labels = [ "Date", "nodes", "edges"]
+		
+		if (diff) {
+			let avgIntervalTime = (data.pop()[0] - data[0][0])/data.length // used to display density (histogram) rather than counts per interval
+			data = data.slice(1).map(([t2, [w,e]],i) => {var [t1,[ww, ee]] = data[i]
+				let dt = (t2 - t1)/avgIntervalTime// dt should be used if intervars have variable width.
+				return [t2, [(w - ww)/dt, (e - ee)/dt]]})
+		}
+		
+		const addRatio = ratioHandler => data.map(([ms, [w,e]]) => [ms, [w,e, ratioHandler(e/w)]])
+		
+		data = addRatio(r => Math.abs(r) == Infinity ? NaN : r); labels = [...labels, "e/w"]
+		
+		if (scale) { let totals = redVis(addRatio(r =>
+			isNaN(r) || Math.abs(r) == Infinity ? 0 : r).map(([,e])=>e), [0,0,0])
+			
+			for (seriesIndex of [1,2]) { let s = totals[0]/totals[seriesIndex]
+				data = data.map(([ms, sample]) => {sample[seriesIndex]*=s; return [ms, sample]})
+				labels[seriesIndex+1] += "*" + s.toFixed(2)
+			}
+		}
+		
+		data = data.map(([ms, data]) => [new Date(ms), ...data])
+		
 		makeDiv((make, textNode, close) => {
 			textNode("b")("Usage: Zoom: click-drag, Pan: shift-click-drag, Restore zoom level: double-click or ");
-			textNode('button')("Close").onclick=close ; (textNode("b")(" Diff")) ; var de = make('input', {type:"checkbox"}) ; de.checked = diff
-			var timer = setInterval(e => {if (de.checked != diff) {clearTimeout(timer) ; close() ; historicTrends(!diff)}}, 1000)
-			make('div', {id:"div_g", style:"width:100%"})
+			textNode('button')("Close").onclick=close ; var buttons = [['Diff',diff], ['Scale', scale]]
+				.map(([title, initVal]) => {textNode("b")(" "+title+":"); var b = make('input', {type:"checkbox"});
+					b.checked = initVal ; return [b, initVal]})
+			make('button', {}, 'Export').onclick = () => open('').document.write(JSON.stringify(data))
+			
+			var timer = setInterval(e => { if (buttons.filter(([b,iv])=> b.checked != iv).length > 0)
+				{clearTimeout(timer) ; close() ; historicTrends(...buttons.map(([b,]) => b.checked))}}, 2000)
+
+			make('div', {id:"div_g", style:"width:100%"}) ; return () => clearTimeout(timer)
 		})
 
 		var script = document.createElement('script'); script.src = 'http://dygraphs.com/dygraph-combined.js';
 		script.onload = function () {
 			Dygraph.addEvent(document, "mousewheel", function() { lastClickedGraph = null; });
 			Dygraph.addEvent(document, "click", function() { lastClickedGraph = null; });
-			let data = [...controller.trends.asArray(), [Date.now(), [Summary.nodes, Summary.edges/2]]]
-			data = diff ? data.slice(1).map(([ms, [w,e]],i) => {var [,[ww, ee]] = data[i] ; return [ms, [w - ww, e - ee]]}) : data
-			new Dygraph(document.getElementById("div_g"), data.map(( [ms, sample])=> [new Date(ms), ...sample]), {labels: [ "Date", "nodes", "edges" ]});
+			new Dygraph(document.getElementById("div_g"),
+				...[data, {showRoller: true, labels: labels}]);
 		}; document.head.appendChild(script);
 	}
     </script>
