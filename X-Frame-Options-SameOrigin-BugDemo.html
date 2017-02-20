@@ -1,0 +1,34 @@
+<button id="button1" style="display:none">Authorize</button>
+<div id="console1"></div>
+<script>
+
+	function htmlLog(...msg) {console1.innerHTML += msg + "<p>"}
+	
+	var handleAuthResult = function(authResult) {
+		function report(title, buttonVisibility) {
+			function json(obj) {try {return JSON.stringify(obj)} catch (e) {console.error("auth_report2json:", e)}}
+			htmlLog(title+' = ' + json(authResult))//Object.keys(authResult))
+			htmlLog(' error status = ' + json(authResult.status))
+			button1.style.display = buttonVisibility
+		}
+		if (authResult && !authResult.error) report('Authorized ok', 'none');
+		else { report("Authorization failed", 'block')
+		  button1.onclick = function() {authorize(true)};
+		}
+	};
+
+	function authorize(popup) { 
+		htmlLog(`Authorizing(${popup})`)
+		gapi.auth.authorize({
+			client_id: '1088706429537-4oqhqr7o826ditbok23sll1rund1jim1.apps.googleusercontent.com',
+			scope: ['install', 'file'].map(function (access) { 
+				return "https://www.googleapis.com/auth/drive." + access }),
+			//user_id: userId,
+			immediate: !popup // true try with no popups first
+						//false // authorizeWithPopup
+		}, handleAuthResult);
+	}
+	
+	htmlLog('loading google api')
+</script>
+<script type="text/javascript" src="https://apis.google.com/js/api.js" onload="htmlLog('loading google client');gapi.load('client,drive-realtime', () => {authorize(false)})"></script>

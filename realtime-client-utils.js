@@ -71,17 +71,18 @@ rtclient.Authorizer = function(onAuthComplete) { var me = this;
 rtclient.Authorizer.prototype.authorize = function(onAuthComplete) {
 
 	var handleAuthResult = function(authResult) {
-		function log(title) {
-			console.log('auth '+title+' = ' + JSON.stringify(authResult))//Object.keys(authResult))
-			console.log(' error status = ' + JSON.stringify(authResult.status))
+		function log(title, buttonVisibility) {
+			ab.style.display = buttonVisibility
+			console.log('auth '+title+' = ', authResult)//Object.keys(authResult))
+			console.log(' error status = ', authResult.status) // NB! JSON.stringify(result) will raise the "frame origin error"
 		}
 		let ab = rtclient.authButton()
-		if (authResult && !authResult.error) { log("ok")
-			ab.style.display = 'none'; //_this.fetchUserId(onAuthComplete);
+		if (authResult && !authResult.error) { log("ok", 'none')
+			//_this.fetchUserId(onAuthComplete);
 			summarize('Authorized, ' + (onAuthComplete ? 'has to load some file' : 'has nothing else to do') );
 		  if (onAuthComplete) onAuthComplete()
-		} else { log("error")
-		  ab.style.display = 'block'; ab.onclick = function() {authorize(true)};
+		} else { log("error", 'block')
+		  ab.onclick = function() {authorize(true)};
 		}
 	};
 
