@@ -206,7 +206,8 @@ rtclient.RealtimeLoader.prototype.loadFile = function(fileId, initializer, onLoa
 		case CLIENT_ERROR: throw e ; window.location.href= "/"; break
 		case NOT_FOUND: alert("The file was not found. It does not exist or you do not have read access to the file.");
 			window.location.href= "/"; break
-		default: throw new Error(e)
+		default: console.error(e); break
+		//default: throw new Error(e)
 	}}}
 
   gapi.drive.realtime.load(fileId, onLoaded, initializer, handleErrors);
