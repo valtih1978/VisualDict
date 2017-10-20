@@ -38,7 +38,7 @@ recede the mouse too far away.
 </tr> </table> 
  
   <table onmouseenter="classVisible('aboutbar', 'block')" onmouseleave="classVisible('aboutbar', 'none')" style="float: right; font-size:small">
-	  <tr id=resetButton style="display:none"><td><a href="javascript:nodes.clear(); edges.clear();" title="Clean up the display. You can achieve the same with F5-page refresh but this button is faster and unloads the server.">Reset</a>&nbsp;&nbsp;&nbsp;</td></tr>
+	  <tr id=resetButton style="display:none"><td><a href="javascript:nodes.clear(); edges.clear();reset()" title="Clean up the display. You can achieve the same with F5-page refresh but this button is faster and unloads the server.">Reset</a>&nbsp;&nbsp;&nbsp;</td></tr>
 	  <tr><td><a class="aboutbar" href="javascript:window.open('about.html' + location.hash)">About</a></td></tr>
 	  <tr><td><a class="aboutbar" href="javascript:window.open('options.html' + location.hash)">Options</a></td></tr>
 	  <tr><td><a class="aboutbar" href="http://almende.github.io/vis/examples/network/21_data_manipulation.html">Almende</a></td></tr>
@@ -259,10 +259,6 @@ recede the mouse too far away.
 		})
 	}
 
-	// create an array with nodes
-	nodes = new vis.DataSet();
-	edges = new vis.DataSet();
-
 	function onselect(selected) {
 		var nodes = selected.nodes
 		console.log("selected.nodes: " + nodes.join(',') + ", network.sel.nodes: " + network.getSelection().nodes.join(','))
@@ -471,6 +467,23 @@ recede the mouse too far away.
 	function isPartial() {return controller.getConfig('almende-mode') == 'partial'}
 	
 	window.onbeforeunload = function (e) {if (saving1.style.display != 'none') return "There are some data unsaved. Are you sure that you want to terminate?"}
+
+	function reset() {
+		nodes = new vis.DataSet();
+		edges = new vis.DataSet();
+		network = new vis.Network(network_div, {nodes: nodes, edges: edges}, options);
+		network.editMode = true // https://github.com/almende/vis/issues/605#issue-55793606
+		network._createManipulatorBar()
+		network.on('select', onselect)
+		network.keycharm.bind("esc", function(evt) {
+			if (ConnectMode_span.style.display == 'block') recoverEditEdge()})
+
+		// make distance eucledian https://github.com/almende/vis/issues/729
+		network._nodeInActiveArea = function(node) {
+			function squared(x) { return Math.pow(node[x] - network.areaCenter[x],2)}
+			return Math.pow(squared('x') + squared('y'), 1/2) < this.constants.clustering.activeAreaBoxSize/2/this.scale
+		}
+	}
 	
 	function onFileLoaded(doc) {
 		installKeyListener()
@@ -510,19 +523,7 @@ recede the mouse too far away.
 			controller.connectionSet(node).forEach(assoc => visConnect(node, assoc))
 		}) ; else resetButton.style.display = 'block'
 
-
-		network = new vis.Network(network_div, {nodes: nodes, edges: edges}, options);
-		network.editMode = true // https://github.com/almende/vis/issues/605#issue-55793606
-		network._createManipulatorBar()
-		network.on('select', onselect)
-		network.keycharm.bind("esc", function(evt) {
-			if (ConnectMode_span.style.display == 'block') recoverEditEdge()})
-
-		// make distance eucledian https://github.com/almende/vis/issues/729
-		network._nodeInActiveArea = function(node) {
-			function squared(x) { return Math.pow(node[x] - network.areaCenter[x],2)}
-			return Math.pow(squared('x') + squared('y'), 1/2) < this.constants.clustering.activeAreaBoxSize/2/this.scale
-		}
+		reset()
 
 	}	
 
